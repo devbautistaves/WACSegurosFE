@@ -1,5 +1,6 @@
-// Use relative URLs to go through Next.js proxy, or direct backend URL if set
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "/api/proxy"
+// WAC Seguros — siempre usa el proxy interno de Next.js
+// El proxy (app/api/proxy/route.ts) apunta a vps.../wacseguros
+const API_URL = "/api/proxy"
 
 interface FetchOptions extends RequestInit {
   token?: string
