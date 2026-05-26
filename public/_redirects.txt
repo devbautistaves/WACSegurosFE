@@ -1,0 +1,2 @@
+# Redirect grupojv subdomain to login
+https://grupojv.tusventas.digital/*  https://tusventas.digital/login  301!

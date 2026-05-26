@@ -1,0 +1,116 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Paleta basada en Grupo JV - Azul profesional */
+    --background: 210 20% 98%;
+    --foreground: 210 40% 15%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 210 40% 15%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 210 40% 15%;
+
+    /* Primary: Azul oscuro Grupo JV #1a3a5c */
+    --primary: 209 55% 23%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Secondary: Gris azulado suave */
+    --secondary: 210 20% 93%;
+    --secondary-foreground: 210 40% 20%;
+
+    --muted: 210 15% 92%;
+    --muted-foreground: 210 15% 45%;
+
+    /* Accent: Celeste Grupo JV #5eb3e4 */
+    --accent: 200 70% 63%;
+    --accent-foreground: 210 40% 15%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 210 20% 88%;
+    --input: 210 20% 88%;
+    --ring: 209 55% 23%;
+
+    --radius: 0.5rem;
+
+    /* Status colors */
+    --status-pending: 48 96% 53%;
+    --status-observed: 25 95% 53%;
+    --status-appointed: 217 91% 60%;
+    --status-completed: 142 71% 45%;
+    --status-cancelled: 0 84% 60%;
+
+    --chart-1: 209 55% 23%;
+    --chart-2: 200 70% 63%;
+    --chart-3: 142 71% 45%;
+    --chart-4: 25 95% 53%;
+    --chart-5: 0 84% 60%;
+
+    /* Sidebar specific */
+    --sidebar-bg: 209 55% 18%;
+    --sidebar-foreground: 210 20% 98%;
+    --sidebar-border: 209 50% 25%;
+    --sidebar-muted: 209 40% 30%;
+    --sidebar-accent: 200 70% 63%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: hsl(var(--secondary));
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground));
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--primary));
+}
+
+/* Status badge styles */
+.status-pending {
+  @apply bg-yellow-100 text-yellow-700 border-yellow-300;
+}
+
+.status-observed {
+  @apply bg-orange-100 text-orange-700 border-orange-300;
+}
+
+.status-appointed {
+  @apply bg-blue-100 text-blue-700 border-blue-300;
+}
+
+.status-completed {
+  @apply bg-green-100 text-green-700 border-green-300;
+}
+
+.status-cancelled {
+  @apply bg-red-100 text-red-700 border-red-300;
+}
+
+.status-pending_appointment {
+  @apply bg-purple-100 text-purple-700 border-purple-300;
+}
