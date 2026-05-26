@@ -27,18 +27,32 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
-const ASEGURADORAS = ["ATM", "BBVA", "SANCOR", "GALENO", "LES"]
-const RAMOS = ["AUTOMOTORES", "MOTO", "BICICLETA", "HOGAR", "ACC_PERSONALES", "CELULAR", "COMERCIO", "OTRO"]
+const ASEGURADORAS = [
+  "LA_CAJA", "MERCANTIL_ANDINA", "SAN_CRISTOBAL", "SANCOR", "ALLIANZ",
+  "ZURICH", "GALICIA", "LA_PERSEVERANCIA", "ATM", "BERKLEY",
+  "RIVADAVIA", "MAPFRE", "NACION", "INTEGRITY", "PROVIDENCIA", "PROF", "OTRA",
+]
+const RAMOS = [
+  "AUTOS", "MOTOS", "HOGAR", "INCENDIO", "INT_COMERCIO",
+  "ART", "ACC_PERSONALES", "VIDA", "RESP_CIVIL", "OBJ_ESPECIFICOS",
+  "FLOTA_AUTOMOTOR", "OTRO",
+]
 const ESTADOS = ["VIGENTE", "ANULADA", "PENDIENTE_CLIENTE"]
-const SUCURSALES = ["GLEW", "LONG", "OTRA"]
 const MEDIOS_PAGO = ["TARJ_CRED", "CBU", "CUPON", "OTRO"]
 
 const RAMO_LABELS: Record<string, string> = {
-  AUTOMOTORES: "Automotores", MOTO: "Moto", BICICLETA: "Bicicleta",
-  HOGAR: "Hogar", ACC_PERSONALES: "Acc. Personales", CELULAR: "Celular",
-  COMERCIO: "Comercio", OTRO: "Otro",
+  AUTOS: "Autos", MOTOS: "Motos", HOGAR: "Hogar", INCENDIO: "Incendio",
+  INT_COMERCIO: "Int. Comercio", ART: "ART", ACC_PERSONALES: "Acc. Personales",
+  VIDA: "Vida", RESP_CIVIL: "Resp. Civil", OBJ_ESPECIFICOS: "Obj. Específicos",
+  FLOTA_AUTOMOTOR: "Flota Automotor", OTRO: "Otro",
 }
-const ASEGURADORA_LABELS: Record<string, string> = {}
+const ASEGURADORA_LABELS: Record<string, string> = {
+  LA_CAJA: "La Caja", MERCANTIL_ANDINA: "Mercantil Andina", SAN_CRISTOBAL: "San Cristóbal",
+  SANCOR: "Sancor", ALLIANZ: "Allianz", ZURICH: "Zurich", GALICIA: "Galicia",
+  LA_PERSEVERANCIA: "La Perseverancia", ATM: "ATM", BERKLEY: "Berkley",
+  RIVADAVIA: "Rivadavia", MAPFRE: "Mapfre", NACION: "Nación", INTEGRITY: "Integrity",
+  PROVIDENCIA: "Providencia", PROF: "Prof", OTRA: "Otra",
+}
 const MEDIO_LABELS: Record<string, string> = {
   TARJ_CRED: "Tarj. Crédito", CBU: "CBU", EFECTIVO: "Efectivo", CUPON: "Cupón/Efectivo", OTRO: "Otro",
 }
@@ -54,20 +68,24 @@ function estadoBadge(estado: string) {
 function ramoBadge(ramo?: string) {
   if (!ramo) return null
   const colors: Record<string, string> = {
-    AUTOMOTORES: "bg-blue-500/10 text-blue-500",
-    MOTO: "bg-purple-500/10 text-purple-500",
-    BICICLETA: "bg-green-500/10 text-green-500",
+    AUTOS: "bg-blue-500/10 text-blue-500",
+    MOTOS: "bg-purple-500/10 text-purple-500",
     HOGAR: "bg-orange-500/10 text-orange-500",
+    INCENDIO: "bg-red-500/10 text-red-500",
+    INT_COMERCIO: "bg-yellow-500/10 text-yellow-600",
+    ART: "bg-pink-500/10 text-pink-500",
     ACC_PERSONALES: "bg-teal-500/10 text-teal-500",
-    CELULAR: "bg-indigo-500/10 text-indigo-500",
-    COMERCIO: "bg-yellow-500/10 text-yellow-600",
+    VIDA: "bg-green-500/10 text-green-500",
+    RESP_CIVIL: "bg-indigo-500/10 text-indigo-500",
+    OBJ_ESPECIFICOS: "bg-cyan-500/10 text-cyan-500",
+    FLOTA_AUTOMOTOR: "bg-violet-500/10 text-violet-500",
     OTRO: "bg-gray-500/10 text-gray-500",
   }
   return <span className={cn("px-2 py-0.5 rounded-full text-xs font-medium", colors[ramo] || "bg-gray-500/10 text-gray-500")}>{RAMO_LABELS[ramo] || ramo}</span>
 }
 
 const EMPTY_FORM: Partial<Poliza> = {
-  sucursal: "GLEW", medioDePago: "CUPON", estado: "VIGENTE", gnc: false,
+  medioDePago: "CUPON", estado: "VIGENTE", gnc: false,
   nombreApellido: "", patente: "", aseguradora: undefined, ramo: undefined,
   tipoCobertura: "", numPoliza: "", dni: "", celular: "", email: "",
   domicilio: "", localidad: "", cp: "", datosRiesgo: "",
@@ -97,7 +115,6 @@ function PolizasPageInner() {
   const [estadoFilter, setEstadoFilter] = useState(() => searchParams.get("estado") || "all")
   const [aseguradoraFilter, setAseguradoraFilter] = useState(() => searchParams.get("aseguradora") || "all")
   const [ramoFilter, setRamoFilter] = useState(() => searchParams.get("ramo") || "all")
-  const [sucursalFilter, setSucursalFilter] = useState("all")
 
   // Dialog
   const [isDialogOpen, setIsDialogOpen] = useState(false)
@@ -117,7 +134,6 @@ function PolizasPageInner() {
       if (estadoFilter !== "all") params.estado = estadoFilter
       if (aseguradoraFilter !== "all") params.aseguradora = aseguradoraFilter
       if (ramoFilter !== "all") params.ramo = ramoFilter
-      if (sucursalFilter !== "all") params.sucursal = sucursalFilter
       if (search.trim()) params.search = search.trim()
       if (filterYear !== null && filterMonth !== null) {
         params.year  = String(filterYear)
@@ -134,12 +150,12 @@ function PolizasPageInner() {
     }
   }
 
-  useEffect(() => { fetchPolizas() }, [page, estadoFilter, aseguradoraFilter, ramoFilter, sucursalFilter, filterYear, filterMonth])
+  useEffect(() => { fetchPolizas() }, [page, estadoFilter, aseguradoraFilter, ramoFilter, filterYear, filterMonth])
 
   const handleSearch = () => { setPage(1); fetchPolizas() }
 
-  const hasFilters = estadoFilter !== "all" || aseguradoraFilter !== "all" || ramoFilter !== "all" || sucursalFilter !== "all" || search.trim() !== ""
-  const clearFilters = () => { setEstadoFilter("all"); setAseguradoraFilter("all"); setRamoFilter("all"); setSucursalFilter("all"); setSearch(""); setPage(1) }
+  const hasFilters = estadoFilter !== "all" || aseguradoraFilter !== "all" || ramoFilter !== "all" || search.trim() !== ""
+  const clearFilters = () => { setEstadoFilter("all"); setAseguradoraFilter("all"); setRamoFilter("all"); setSearch(""); setPage(1) }
 
   const openCreate = () => { setSelectedPoliza(null); setFormData(EMPTY_FORM); setIsDialogOpen(true) }
   const openEdit = (p: Poliza) => { setSelectedPoliza(p); setFormData({ ...p }); setIsDialogOpen(true) }
@@ -156,13 +172,13 @@ function PolizasPageInner() {
         const res = await segurosAPI.updatePoliza(token, selectedPoliza._id, formData)
         toast({
           title: "Póliza actualizada",
-          description: (res as any).cobranzaCreada ? "Se generó el registro de cobranza automáticamente." : undefined,
+          description: res.cobranzaCreada ? "Se generó el registro de cobranza automáticamente." : undefined,
         })
       } else {
         const res = await segurosAPI.createPoliza(token, formData)
         toast({
           title: "Póliza creada",
-          description: (res as any).cobranzaCreada ? "Se generó el registro de cobranza automáticamente." : undefined,
+          description: res.cobranzaCreada ? "Se generó el registro de cobranza automáticamente." : undefined,
         })
       }
       setIsDialogOpen(false)
@@ -304,13 +320,6 @@ function PolizasPageInner() {
                   {RAMOS.map(r => <SelectItem key={r} value={r}>{RAMO_LABELS[r]}</SelectItem>)}
                 </SelectContent>
               </Select>
-              <Select value={sucursalFilter} onValueChange={v => { setSucursalFilter(v); setPage(1) }}>
-                <SelectTrigger className="w-full sm:w-[130px] bg-secondary/50"><SelectValue placeholder="Sucursal" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas</SelectItem>
-                  {SUCURSALES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                </SelectContent>
-              </Select>
               <Button variant="default" size="sm" onClick={handleSearch} className="bg-emerald-600 hover:bg-emerald-700">
                 <Search className="h-4 w-4" />
               </Button>
@@ -362,7 +371,6 @@ function PolizasPageInner() {
                       <th className="text-left py-3 px-3 font-medium hidden md:table-cell">Cobertura</th>
                       <th className="text-left py-3 px-3 font-medium hidden lg:table-cell">N° Póliza</th>
                       <th className="text-left py-3 px-3 font-medium hidden xl:table-cell">Medio Pago</th>
-                      <th className="text-left py-3 px-3 font-medium hidden lg:table-cell">Sucursal</th>
                       <th className="text-left py-3 px-3 font-medium">Estado</th>
                       <th className="text-left py-3 px-3 font-medium">Acciones</th>
                     </tr>
@@ -386,7 +394,6 @@ function PolizasPageInner() {
                         </td>
                         <td className="py-3 px-3 hidden lg:table-cell font-mono text-xs">{p.numPoliza || "—"}</td>
                         <td className="py-3 px-3 hidden xl:table-cell text-xs">{p.medioDePago ? (MEDIO_LABELS[p.medioDePago] || p.medioDePago) : "—"}</td>
-                        <td className="py-3 px-3 hidden lg:table-cell">{p.sucursal}</td>
                         <td className="py-3 px-3">{estadoBadge(p.estado)}</td>
                         <td className="py-3 px-3">
                           <div className="flex gap-1">
@@ -418,15 +425,8 @@ function PolizasPageInner() {
           </DialogHeader>
           <div className="flex-1 overflow-y-auto px-6 pb-2">
             <FieldGroup>
-              {/* Fila 1: Sucursal + Aseguradora + Estado */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <Field>
-                  <FieldLabel>Sucursal</FieldLabel>
-                  <Select value={formData.sucursal || "GLEW"} onValueChange={v => setFormData(p => ({ ...p, sucursal: v }))}>
-                    <SelectTrigger className="bg-secondary/50"><SelectValue /></SelectTrigger>
-                    <SelectContent>{SUCURSALES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
-                  </Select>
-                </Field>
+              {/* Fila 1: Estado + Medio de Pago */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Field>
                   <FieldLabel>Estado</FieldLabel>
                   <Select value={formData.estado || "VIGENTE"} onValueChange={v => setFormData(p => ({ ...p, estado: v as any }))}>

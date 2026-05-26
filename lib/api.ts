@@ -2061,36 +2061,37 @@ export interface BienAsegurado {
   sumaAsegurada?: number
 }
 
+// WAC Seguros — Poliza schema (matches WACSegurosBE server.js)
 export interface Poliza {
   _id: string
-  companyId: string
-  numeroPoliza: string
-  aseguradora: string
-  ramo: string
-  vigenciaDesde: string
-  vigenciaHasta: string
-  estado: PolizaEstado
-  formaPago: FormaPago
-  frecuenciaPago: FrecuenciaPago
-  primaTotal: number
-  primaMensual: number
-  clienteNombre: string
-  clienteDni: string
-  clienteTelefono?: string
-  clienteEmail?: string
-  clienteDomicilio?: string
-  clienteLocalidad?: string
-  clienteProvincia?: string
-  bienAsegurado?: BienAsegurado
-  productorId?: string | { _id: string; name: string; email?: string }
-  productorNombre?: string
-  sucursal?: string
-  comisionPorcentaje?: number
-  comisionMonto?: number
-  fechaEmision?: string
-  fechaAnulacion?: string
+  // Póliza
+  numPoliza?: string
+  aseguradora?: string
+  ramo?: string
+  tipoCobertura?: string
+  fechaInicVig?: string
+  // Estado y pago
+  estado: "VIGENTE" | "ANULADA" | "PENDIENTE_CLIENTE"
   motivoAnulacion?: string
-  observaciones?: string
+  fechaAnulacion?: string
+  medioDePago?: string
+  // Asegurado
+  nombreApellido: string
+  dni?: string
+  fechaNacimiento?: string
+  celular?: string
+  email?: string
+  domicilio?: string
+  localidad?: string
+  cp?: string
+  // Riesgo
+  patente?: string
+  datosRiesgo?: string
+  chasis?: string
+  motor?: string
+  gnc?: boolean
+  // Meta
+  creadoPor?: string
   createdAt: string
   updatedAt: string
 }
@@ -2800,9 +2801,9 @@ export const segurosAPI = {
     return fetchAPI<{ success: boolean; polizas: Poliza[]; total: number; stats?: { vigentes: number; anuladas: number; pendientes: number } }>(`/api/seguros/polizas${qs}`, { token })
   },
   createPoliza: (token: string, data: Partial<Poliza>) =>
-    fetchAPI<{ success: boolean; poliza: Poliza }>("/api/seguros/polizas", { method: "POST", token, body: JSON.stringify(data) }),
+    fetchAPI<{ success: boolean; poliza: Poliza; cobranzaCreada?: boolean }>("/api/seguros/polizas", { method: "POST", token, body: JSON.stringify(data) }),
   updatePoliza: (token: string, id: string, data: Partial<Poliza>) =>
-    fetchAPI<{ success: boolean; poliza: Poliza }>(`/api/seguros/polizas/${id}`, { method: "PUT", token, body: JSON.stringify(data) }),
+    fetchAPI<{ success: boolean; poliza: Poliza; cobranzaCreada?: boolean }>(`/api/seguros/polizas/${id}`, { method: "PUT", token, body: JSON.stringify(data) }),
   deletePoliza: (token: string, id: string) =>
     fetchAPI<{ success: boolean }>(`/api/seguros/polizas/${id}`, { method: "DELETE", token }),
 

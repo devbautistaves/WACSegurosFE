@@ -97,8 +97,8 @@ export default function AdminUsersPage() {
     let filtered = [...users]
 
     // Filtrar por empresa actual - solo mostrar usuarios de esta empresa
-    // Si el usuario no tiene companyId asignado, mostrar en prosegur por defecto
-    filtered = filtered.filter((user) => (user.companyId || "prosegur") === currentCompany.id)
+    // Si el usuario no tiene companyId asignado, mostrarlo igual (aplica para WAC donde hay un solo sistema)
+    filtered = filtered.filter((user) => !user.companyId || user.companyId === currentCompany.id)
 
     if (searchQuery) {
       const query = searchQuery.toLowerCase()

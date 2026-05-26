@@ -16,6 +16,7 @@ import {
   Activity,
   AlertTriangle,
   Shield,
+  Megaphone,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
@@ -47,6 +48,7 @@ export function Sidebar({ role, userName, onLinkClick }: SidebarProps) {
     { href: "/admin/seguros/siniestros",  label: "Siniestros",     icon: AlertTriangle },
     { href: "/admin/seguros/seguimiento", label: "Seguimiento",    icon: Activity },
     { href: "/admin/users",               label: "Usuarios",       icon: Users },
+    { href: "/admin/announcements",       label: "Anuncios",       icon: Megaphone },
     { href: "/admin/notifications",       label: "Notificaciones", icon: Bell },
     { href: "/admin/chat",                label: "Chat",           icon: MessageSquare },
   ]
