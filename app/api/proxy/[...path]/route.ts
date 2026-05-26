@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 
-const BACKEND_URL = process.env.BACKEND_API_URL || "https://vps-5905394-x.dattaweb.com"
+const BACKEND_URL = process.env.BACKEND_API_URL || "https://vps-5905394-x.dattaweb.com/wacseguros"
 
 export async function GET(
   request: NextRequest,
