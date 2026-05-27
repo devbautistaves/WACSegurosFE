@@ -35,11 +35,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const sendHeartbeat = async () => {
       try {
-        await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/heartbeat`, {
+        await fetch(`/api/proxy/users/heartbeat`, {
           method: "POST",
           headers: { Authorization: `Bearer ${token}` },
         })
-      } catch (error) {
+      } catch {
         // Silently fail - no need to log heartbeat errors
       }
     }

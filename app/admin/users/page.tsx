@@ -58,7 +58,7 @@ export default function AdminUsersPage() {
     password: "",
     phone: "",
     location: "",
-    role: "seller" as "seller" | "admin" | "admin_seguros" | "support",
+    role: "admin_seguros" as "admin" | "admin_seguros",
     commissionRate: 0.30,
     supervisorBaseCommission: 750000,
     fixedCommissionPerSale: null as number | null,
@@ -133,7 +133,7 @@ export default function AdminUsersPage() {
         password: "",
         phone: user.phone,
         location: user.location,
-        role: user.role as "seller" | "admin" | "admin_seguros" | "support",
+        role: (user.role === "admin" ? "admin" : "admin_seguros") as "admin" | "admin_seguros",
         commissionRate: user.commissionRate || 0.30,
         supervisorBaseCommission: user.supervisorBaseCommission || 750000,
         fixedCommissionPerSale: user.fixedCommissionPerSale || null,
@@ -150,7 +150,7 @@ export default function AdminUsersPage() {
         password: "",
         phone: "",
         location: "",
-        role: "seller",
+        role: "admin_seguros" as "admin" | "admin_seguros",
         commissionRate: 0.30,
         supervisorBaseCommission: 750000,
         fixedCommissionPerSale: null,
@@ -285,7 +285,7 @@ export default function AdminUsersPage() {
         </div>
 
         {/* Stats */}
-        <div className="grid gap-4 grid-cols-2 lg:grid-cols-6">
+        <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
           <Card className="border-border/50 bg-card/50">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
@@ -293,23 +293,8 @@ export default function AdminUsersPage() {
                   <UsersIcon className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-foreground">{users.length}</p>
+                  <p className="text-2xl font-bold text-foreground">{filteredUsers.length}</p>
                   <p className="text-xs text-muted-foreground">Total Usuarios</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="border-border/50 bg-card/50">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
-                  <UserCheck className="h-5 w-5 text-blue-400" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-foreground">
-                    {users.filter((u) => u.role === "seller").length}
-                  </p>
-                  <p className="text-xs text-muted-foreground">Vendedores</p>
                 </div>
               </div>
             </CardContent>
@@ -322,24 +307,9 @@ export default function AdminUsersPage() {
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-foreground">
-                    {users.filter((u) => u.role === "admin_seguros").length}
+                    {filteredUsers.filter((u) => u.role === "admin_seguros").length}
                   </p>
                   <p className="text-xs text-muted-foreground">Admin Seguros</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="border-border/50 bg-card/50">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-lg bg-teal-500/10 flex items-center justify-center">
-                  <Shield className="h-5 w-5 text-teal-400" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-foreground">
-                    {users.filter((u) => u.role === "support").length}
-                  </p>
-                  <p className="text-xs text-muted-foreground">Soporte</p>
                 </div>
               </div>
             </CardContent>
@@ -352,7 +322,7 @@ export default function AdminUsersPage() {
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-foreground">
-                    {users.filter((u) => u.role === "admin").length}
+                    {filteredUsers.filter((u) => u.role === "admin").length}
                   </p>
                   <p className="text-xs text-muted-foreground">Admins</p>
                 </div>
@@ -367,7 +337,7 @@ export default function AdminUsersPage() {
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-foreground">
-                    {users.filter((u) => u.isActive).length}
+                    {filteredUsers.filter((u) => u.isActive).length}
                   </p>
                   <p className="text-xs text-muted-foreground">Activos</p>
                 </div>
@@ -395,12 +365,8 @@ export default function AdminUsersPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos los roles</SelectItem>
-                  <SelectItem value="seller">Vendedor</SelectItem>
-                  <SelectItem value="supervisor">Supervisor</SelectItem>
-                  <SelectItem value="support">Soporte</SelectItem>
                   <SelectItem value="admin">Admin</SelectItem>
                   <SelectItem value="admin_seguros">Admin Seguros</SelectItem>
-                  <SelectItem value="admin_tpy">Admin TPY</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -465,18 +431,10 @@ export default function AdminUsersPage() {
                                           className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
                                             user.role === "admin"
                                               ? "bg-purple-500/20 text-purple-400"
-                                              : user.role === "admin_seguros"
-                                              ? "bg-emerald-500/20 text-emerald-400"
-                                              : user.role === "admin_tpy"
-                                              ? "bg-cyan-500/20 text-cyan-400"
-                                              : user.role === "supervisor"
-                                              ? "bg-amber-500/20 text-amber-400"
-                                              : user.role === "support"
-                                              ? "bg-teal-500/20 text-teal-400"
-                                              : "bg-blue-500/20 text-blue-400"
+                                              : "bg-emerald-500/20 text-emerald-400"
                                           }`}
                                         >
-                                          {user.role === "admin" ? "Admin" : user.role === "admin_seguros" ? "Admin Seguros" : user.role === "admin_tpy" ? "Admin TPY" : user.role === "supervisor" ? "Supervisor" : user.role === "support" ? "Soporte" : "Vendedor"}
+                                          {user.role === "admin" ? "Admin" : "Admin Seguros"}
                                         </span>
                       </td>
                       <td className="py-3 px-4 text-foreground">{user.totalSales}</td>
@@ -716,7 +674,7 @@ export default function AdminUsersPage() {
                 <FieldLabel>Rol</FieldLabel>
                 <Select
                   value={formData.role}
-                  onValueChange={(value: "seller" | "admin" | "admin_seguros" | "support") =>
+                  onValueChange={(value: "admin" | "admin_seguros") =>
                     setFormData((prev) => ({ ...prev, role: value }))
                   }
                 >
@@ -724,70 +682,12 @@ export default function AdminUsersPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="seller">Vendedor</SelectItem>
-                    <SelectItem value="support">Soporte</SelectItem>
                     <SelectItem value="admin_seguros">Admin Seguros</SelectItem>
                     <SelectItem value="admin">Admin</SelectItem>
                   </SelectContent>
                 </Select>
               </Field>
 
-              {formData.role === "seller" && (
-                <div className="space-y-3 p-3 border border-border/50 rounded-lg bg-secondary/20">
-                  <div className="flex items-center justify-between">
-                    <FieldLabel>Tipo de Comision</FieldLabel>
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setFormData(prev => ({ ...prev, useFixedCommission: false, fixedCommissionPerSale: null }))}
-                        className={`px-3 py-1.5 text-sm rounded-l-lg border transition-all ${
-                          !formData.useFixedCommission 
-                            ? "bg-primary text-primary-foreground border-primary" 
-                            : "bg-secondary/50 text-muted-foreground border-border hover:border-primary/50"
-                        }`}
-                      >
-                        Escala
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setFormData(prev => ({ ...prev, useFixedCommission: true, fixedCommissionPerSale: prev.fixedCommissionPerSale || 200000 }))}
-                        className={`px-3 py-1.5 text-sm rounded-r-lg border transition-all ${
-                          formData.useFixedCommission 
-                            ? "bg-primary text-primary-foreground border-primary" 
-                            : "bg-secondary/50 text-muted-foreground border-border hover:border-primary/50"
-                        }`}
-                      >
-                        Fija
-                      </button>
-                    </div>
-                  </div>
-                  
-                  {formData.useFixedCommission ? (
-                    <Field>
-                      <FieldLabel htmlFor="fixedCommissionPerSale">Comision Fija por Venta</FieldLabel>
-                      <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
-                        <Input
-                          id="fixedCommissionPerSale"
-                          name="fixedCommissionPerSale"
-                          type="number"
-                          value={formData.fixedCommissionPerSale || ""}
-                          onChange={(e) => setFormData(prev => ({ ...prev, fixedCommissionPerSale: Number(e.target.value) }))}
-                          placeholder="200000"
-                          className="bg-secondary/50 pl-8"
-                        />
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Este vendedor recibira siempre este monto por cada venta activada
-                      </p>
-                    </Field>
-                  ) : (
-                    <p className="text-xs text-muted-foreground">
-                      Escala por defecto: 1-4 ventas: $200.000 | 5-9: $300.000 | 10-19: $350.000 | 20-25: $375.000 | 26+: $400.000
-                    </p>
-                  )}
-                </div>
-              )}
 
             </FieldGroup>
             </div>
