@@ -2049,7 +2049,7 @@ export type PolizaEstado = "vigente" | "pendiente_pago" | "en_mora" | "renovacio
 export type FormaPago = "efectivo" | "cupon" | "debito" | "credito" | "transferencia"
 export type FrecuenciaPago = "mensual" | "bimestral" | "trimestral" | "semestral" | "anual"
 export type CobranzaEstado = "pendiente" | "pagado" | "vencido" | "mora"
-export type SiniestroEstado = "denunciado" | "en_proceso" | "liquidado" | "rechazado" | "cerrado"
+export type SiniestroEstado = "EN_TRAMITE" | "FINALIZADO" | "RECHAZADO"
 export type LiquidacionSeguroEstado = "borrador" | "aprobada" | "pagada"
 
 export interface BienAsegurado {
@@ -2135,26 +2135,18 @@ export interface SiniestroDocumento {
 
 export interface Siniestro {
   _id: string
-  companyId: string
-  polizaId: string | Poliza
-  numeroPoliza: string
-  numeroSiniestro: string
-  aseguradora: string
-  clienteNombre: string
-  ramo: string
-  fechaSiniestro: string
-  fechaDenuncia: string
-  tipoSiniestro: string
-  descripcion: string
-  lugarSiniestro?: string
+  numPoliza?: string
+  polizaId?: string
+  bienAsegurado?: string
+  fechaOcurrencia?: string
+  tipoSiniestro?: "ROBO_TOTAL" | "ROBO_PARCIAL" | "DAÑO_TOTAL" | "CHOQUE_ACCIDENTE" | "CRISTALES" | "INCENDIO" | "GRANIZO" | "OTRO"
+  compania?: string
+  asegurado: string
+  denunciaAdministrativa?: "REALIZADA" | "PENDIENTE"
+  numeroSiniestro?: string
   estado: SiniestroEstado
-  montoReclamado?: number
-  montoLiquidado?: number
-  fechaLiquidacion?: string
-  documentos?: SiniestroDocumento[]
-  historial?: SiniestroHistorial[]
   observaciones?: string
-  registradoPor?: string | { _id: string; name: string }
+  creadoPor?: string
   createdAt: string
   updatedAt: string
 }
@@ -2773,7 +2765,7 @@ export interface EmailNotificacion {
 
 export interface CobranzaEfectivo {
   _id: string
-  sucursal: string
+  sucursal?: string
   diaVto?: number
   nombreApellido: string
   email?: string

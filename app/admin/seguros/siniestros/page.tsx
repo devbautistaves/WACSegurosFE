@@ -39,7 +39,13 @@ const TIPO_LABELS: Record<string, string> = {
   CHOQUE_ACCIDENTE: "Choque/Accidente", CRISTALES: "Cristales", INCENDIO: "Incendio",
   GRANIZO: "Granizo", OTRO: "Otro",
 }
-const ASEG_LABELS: Record<string, string> = {}
+const ASEG_LABELS: Record<string, string> = {
+  LA_CAJA: "La Caja", MERCANTIL_ANDINA: "Mercantil Andina", SAN_CRISTOBAL: "San Cristóbal",
+  SANCOR: "Sancor", ALLIANZ: "Allianz", ZURICH: "Zurich", GALICIA: "Galicia",
+  LA_PERSEVERANCIA: "La Perseverancia", ATM: "ATM", BERKLEY: "Berkley",
+  RIVADAVIA: "Rivadavia", MAPFRE: "Mapfre", NACION: "Nación", INTEGRITY: "Integrity",
+  PROVIDENCIA: "Providencia", PROF: "Prof", OTRA: "Otra",
+}
 
 function estadoBadge(estado: string) {
   switch (estado) {
