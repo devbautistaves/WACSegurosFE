@@ -133,7 +133,7 @@ export default function AdminUsersPage() {
         password: "",
         phone: user.phone,
         location: user.location,
-        role: user.role as "seller" | "admin" | "admin_seguros" | "supervisor" | "support",
+        role: user.role as "seller" | "admin" | "admin_seguros" | "support",
         commissionRate: user.commissionRate || 0.30,
         supervisorBaseCommission: user.supervisorBaseCommission || 750000,
         fixedCommissionPerSale: user.fixedCommissionPerSale || null,
@@ -178,13 +178,9 @@ export default function AdminUsersPage() {
           role: formData.role,
           commissionRate: formData.commissionRate,
         }
-        if (formData.role === "supervisor") {
-          updateData.supervisorBaseCommission = formData.supervisorBaseCommission
-        }
-        // Para vendedores, agregar comision fija y supervisor asignado
+        // Para vendedores, agregar comision fija
         if (formData.role === "seller") {
           updateData.fixedCommissionPerSale = formData.useFixedCommission ? formData.fixedCommissionPerSale : null
-          ;(updateData as any).supervisorId = formData.supervisorId || null
         }
         if (formData.password) {
           updateData.password = formData.password
@@ -205,9 +201,7 @@ export default function AdminUsersPage() {
           location: formData.location,
           role: formData.role,
           commissionRate: formData.commissionRate,
-          ...(formData.role === "supervisor" && { supervisorBaseCommission: formData.supervisorBaseCommission }),
           ...(formData.role === "seller" && formData.useFixedCommission && { fixedCommissionPerSale: formData.fixedCommissionPerSale }),
-          ...(formData.role === "seller" && formData.supervisorId && { supervisorId: formData.supervisorId }),
         }
         await usersAPI.create(token, createData as any)
         toast({
@@ -328,9 +322,9 @@ export default function AdminUsersPage() {
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-foreground">
-                    {users.filter((u) => u.role === "supervisor").length}
+                    {users.filter((u) => u.role === "admin_seguros").length}
                   </p>
-                  <p className="text-xs text-muted-foreground">Supervisores</p>
+                  <p className="text-xs text-muted-foreground">Admin Seguros</p>
                 </div>
               </div>
             </CardContent>
@@ -722,7 +716,7 @@ export default function AdminUsersPage() {
                 <FieldLabel>Rol</FieldLabel>
                 <Select
                   value={formData.role}
-                  onValueChange={(value: "seller" | "admin" | "admin_tpy" | "admin_seguros" | "supervisor" | "support") =>
+                  onValueChange={(value: "seller" | "admin" | "admin_seguros" | "support") =>
                     setFormData((prev) => ({ ...prev, role: value }))
                   }
                 >
@@ -731,61 +725,12 @@ export default function AdminUsersPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="seller">Vendedor</SelectItem>
-                    <SelectItem value="supervisor">Supervisor</SelectItem>
                     <SelectItem value="support">Soporte</SelectItem>
-                    <SelectItem value="admin">Admin</SelectItem>
                     <SelectItem value="admin_seguros">Admin Seguros</SelectItem>
-                    <SelectItem value="admin_tpy">Admin TPY</SelectItem>
+                    <SelectItem value="admin">Admin</SelectItem>
                   </SelectContent>
                 </Select>
               </Field>
-
-              {formData.role === "supervisor" && (
-                <Field>
-                  <FieldLabel htmlFor="supervisorBaseCommission">Comision Base por Venta</FieldLabel>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
-                    <Input
-                      id="supervisorBaseCommission"
-                      name="supervisorBaseCommission"
-                      type="number"
-                      value={formData.supervisorBaseCommission}
-                      onChange={(e) => setFormData(prev => ({ ...prev, supervisorBaseCommission: Number(e.target.value) }))}
-                      placeholder="750000"
-                      className="bg-secondary/50 pl-8"
-                    />
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Monto base que recibe el supervisor por cada venta activada (default: $750.000)
-                  </p>
-                </Field>
-              )}
-
-              {formData.role === "seller" && (
-                <Field>
-                  <FieldLabel>Supervisor Asignado</FieldLabel>
-                  <Select
-                    value={formData.supervisorId || "none"}
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, supervisorId: value === "none" ? null : value }))}
-                  >
-                    <SelectTrigger className="bg-secondary/50">
-                      <SelectValue placeholder="Sin supervisor" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">Sin supervisor</SelectItem>
-                      {users
-                        .filter(u => u.role === "supervisor" && u.isActive && (u.companyId || "prosegur") === formData.companyId)
-                        .map(sup => (
-                          <SelectItem key={sup._id} value={sup._id}>{sup.name}</SelectItem>
-                        ))
-                      }
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Las ventas de este vendedor se asignaran automaticamente a este supervisor
-                  </p>
-                </Field>
-              )}
 
               {formData.role === "seller" && (
                 <div className="space-y-3 p-3 border border-border/50 rounded-lg bg-secondary/20">
