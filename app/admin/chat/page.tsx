@@ -285,7 +285,7 @@ function AdminChatContent() {
 
   if (isLoading) {
     return (
-      <DashboardLayout requiredRole="admin">
+      <DashboardLayout requiredRole={["admin", "admin_seguros"]}>
         <div className="flex items-center justify-center h-[60vh]">
           <Spinner className="h-8 w-8 text-primary" />
         </div>
@@ -294,7 +294,7 @@ function AdminChatContent() {
   }
 
   return (
-    <DashboardLayout requiredRole="admin">
+    <DashboardLayout requiredRole={["admin", "admin_seguros"]}>
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Chat</h1>

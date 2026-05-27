@@ -220,7 +220,7 @@ export default function AdminSettingsPage() {
 
   if (isLoading) {
     return (
-      <DashboardLayout requiredRole="admin">
+      <DashboardLayout requiredRole={["admin", "admin_seguros"]}>
         <div className="flex items-center justify-center h-[60vh]">
           <Spinner className="h-8 w-8 text-primary" />
         </div>
@@ -229,7 +229,7 @@ export default function AdminSettingsPage() {
   }
 
   return (
-    <DashboardLayout requiredRole="admin">
+    <DashboardLayout requiredRole={["admin", "admin_seguros"]}>
       <div className="max-w-2xl mx-auto space-y-6">
         {/* Header */}
         <div>

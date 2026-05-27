@@ -47,7 +47,7 @@ export function Sidebar({ role, userName, onLinkClick }: SidebarProps) {
     { href: "/admin/seguros/cobranzas",   label: "Cobranzas",      icon: CreditCard },
     { href: "/admin/seguros/siniestros",  label: "Siniestros",     icon: AlertTriangle },
     { href: "/admin/seguros/seguimiento", label: "Seguimiento",    icon: Activity },
-    { href: "/admin/users",               label: "Usuarios",       icon: Users },
+    ...(role === "admin" ? [{ href: "/admin/users", label: "Usuarios", icon: Users }] : []),
     { href: "/admin/announcements",       label: "Anuncios",       icon: Megaphone },
     { href: "/admin/notifications",       label: "Notificaciones", icon: Bell },
     { href: "/admin/chat",                label: "Chat",           icon: MessageSquare },

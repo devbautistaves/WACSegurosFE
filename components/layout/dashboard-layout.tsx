@@ -10,7 +10,7 @@ import { getMaintenanceStatus } from "@/hooks/use-maintenance"
 
 interface DashboardLayoutProps {
   children: React.ReactNode
-  requiredRole?: "admin" | "seller" | "supervisor" | "support"
+  requiredRole?: string | string[]
 }
 
 export function DashboardLayout({ children, requiredRole }: DashboardLayoutProps) {
@@ -37,7 +37,10 @@ export function DashboardLayout({ children, requiredRole }: DashboardLayoutProps
     // Check maintenance mode for non-admin users
     const checkMaintenanceMode = () => {
       const isMaintenanceMode = getMaintenanceStatus()
-      if (isMaintenanceMode && requiredRoleRef.current !== "admin") {
+      const role = requiredRoleRef.current
+      const isAdminPage = role === "admin" || role === "admin_seguros" ||
+        (Array.isArray(role) && (role.includes("admin") || role.includes("admin_seguros")))
+      if (isMaintenanceMode && !isAdminPage) {
         router.replace("/maintenance")
         return true
       }
@@ -62,16 +65,22 @@ export function DashboardLayout({ children, requiredRole }: DashboardLayoutProps
         localStorage.setItem("user", JSON.stringify(response.user))
         
         const currentRequiredRole = requiredRoleRef.current
-        if (currentRequiredRole && response.user.role !== currentRequiredRole) {
-          const redirectPath = response.user.role === "admin" 
-            ? "/admin" 
-            : response.user.role === "supervisor" 
-              ? "/supervisor" 
-              : response.user.role === "support"
-                ? "/support"
-                : "/seller"
-          router.push(redirectPath)
-          return
+        if (currentRequiredRole) {
+          const allowedRoles = Array.isArray(currentRequiredRole)
+            ? currentRequiredRole
+            : [currentRequiredRole]
+          if (!allowedRoles.includes(response.user.role)) {
+            const redirectPath =
+              response.user.role === "admin" || response.user.role === "admin_seguros"
+                ? "/admin"
+                : response.user.role === "supervisor"
+                  ? "/supervisor"
+                  : response.user.role === "support"
+                    ? "/support"
+                    : "/seller"
+            router.push(redirectPath)
+            return
+          }
         }
 
         setUser(response.user)

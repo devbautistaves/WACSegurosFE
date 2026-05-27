@@ -436,7 +436,7 @@ export default function AdminDashboardPage() {
 
   if (isLoading) {
     return (
-      <DashboardLayout requiredRole="admin">
+      <DashboardLayout requiredRole={["admin", "admin_seguros"]}>
         <div className="flex items-center justify-center h-[60vh]">
           <Spinner className="h-8 w-8 text-primary" />
         </div>
@@ -451,7 +451,7 @@ export default function AdminDashboardPage() {
     const totalClients = Object.values(statusCounts).reduce((sum, count) => sum + (count as number), 0)
     
     return (
-      <DashboardLayout requiredRole="admin">
+      <DashboardLayout requiredRole={["admin", "admin_seguros"]}>
         <div className="relative">
           <BackgroundEffect variant="nodes" />
           <div className="relative z-10 space-y-6">
@@ -723,7 +723,7 @@ export default function AdminDashboardPage() {
     ]
 
     return (
-      <DashboardLayout requiredRole="admin">
+      <DashboardLayout requiredRole={["admin", "admin_seguros"]}>
         <div className="space-y-6">
 
           {/* Header */}
@@ -1132,7 +1132,7 @@ export default function AdminDashboardPage() {
 
   // Dashboard de TusVentas (original)
   return (
-    <DashboardLayout requiredRole="admin">
+    <DashboardLayout requiredRole={["admin", "admin_seguros"]}>
       <div className="relative">
         <BackgroundEffect variant="aurora" />
         <div className="relative z-10 space-y-6">

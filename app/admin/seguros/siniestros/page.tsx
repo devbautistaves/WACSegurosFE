@@ -154,7 +154,7 @@ export default function SiniestrosPage() {
   }
 
   return (
-    <DashboardLayout requiredRole="admin">
+    <DashboardLayout requiredRole={["admin", "admin_seguros"]}>
       <div>
         <div className="space-y-6">
         {/* Header */}

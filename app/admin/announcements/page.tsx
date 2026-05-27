@@ -549,7 +549,7 @@ const result = await response.json()
 
   if (isLoading) {
     return (
-      <DashboardLayout requiredRole="admin">
+      <DashboardLayout requiredRole={["admin", "admin_seguros"]}>
         <div className="flex items-center justify-center h-[60vh]">
           <Spinner className="h-8 w-8 text-primary" />
         </div>
@@ -558,7 +558,7 @@ const result = await response.json()
   }
 
   return (
-    <DashboardLayout requiredRole="admin">
+    <DashboardLayout requiredRole={["admin", "admin_seguros"]}>
       <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
