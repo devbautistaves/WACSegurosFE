@@ -51,14 +51,14 @@ export default function AdminUsersPage() {
   const { toast } = useToast()
 
   const [formData, setFormData] = useState({
-    companyId: "alarmas" as string,
+    companyId: "seguros" as string,
     allowedCompanies: [] as string[],
     name: "",
     email: "",
     password: "",
     phone: "",
     location: "",
-    role: "seller" as "seller" | "admin" | "admin_tpy" | "admin_seguros" | "supervisor" | "support",
+    role: "seller" as "seller" | "admin" | "admin_seguros" | "support",
     commissionRate: 0.30,
     supervisorBaseCommission: 750000,
     fixedCommissionPerSale: null as number | null,

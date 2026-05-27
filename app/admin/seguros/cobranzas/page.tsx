@@ -31,10 +31,18 @@ import {
 import { cn } from "@/lib/utils"
 
 // ── Constants ──────────────────────────────────────────────────────────────────
-const ASEGURADORAS = ["ATM", "BBVA", "SANCOR", "GALENO", "LES"]
-const SUCURSALES = ["GLEW", "LONG", "OTRA"]
-const ASEG_LABELS: Record<string, string> = {}
-const SUC_LABELS: Record<string, string> = { GLEW: "Glew", LONG: "Longchamps", OTRA: "Otra" }
+const ASEGURADORAS = [
+  "LA_CAJA", "MERCANTIL_ANDINA", "SAN_CRISTOBAL", "SANCOR", "ALLIANZ",
+  "ZURICH", "GALICIA", "LA_PERSEVERANCIA", "ATM", "BERKLEY",
+  "RIVADAVIA", "MAPFRE", "NACION", "INTEGRITY", "PROVIDENCIA", "PROF", "OTRA",
+]
+const ASEG_LABELS: Record<string, string> = {
+  LA_CAJA: "La Caja", MERCANTIL_ANDINA: "Mercantil Andina", SAN_CRISTOBAL: "San Cristóbal",
+  SANCOR: "Sancor", ALLIANZ: "Allianz", ZURICH: "Zurich", GALICIA: "Galicia",
+  LA_PERSEVERANCIA: "La Perseverancia", ATM: "ATM", BERKLEY: "Berkley",
+  RIVADAVIA: "Rivadavia", MAPFRE: "Mapfre", NACION: "Nación", INTEGRITY: "Integrity",
+  PROVIDENCIA: "Providencia", PROF: "Prof", OTRA: "Otra",
+}
 
 const MONTH_NAMES = [
   "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
@@ -104,7 +112,6 @@ function EstadoDropdown({
 const EMPTY: Partial<CobranzaEfectivo> = {
   nombreApellido: "",
   email: "",
-  sucursal: "",
   aseguradora: "",
   patente: "",
   datosRiesgo: "",
@@ -159,7 +166,6 @@ export default function CobranzasPage() {
 
   // Filters
   const [search, setSearch] = useState("")
-  const [sucursalFilter, setSucursalFilter] = useState("all")
   const [aseguradoraFilter, setAseguradoraFilter] = useState("all")
   const [estadoFilter, setEstadoFilter] = useState<EstadoPago | "all">("all")
 
@@ -204,7 +210,6 @@ export default function CobranzasPage() {
       // Sync overdue payments silently before loading
       segurosAPI.syncVencidas(token).catch(() => {})
       const params: Record<string, string> = {}
-      if (sucursalFilter !== "all") params.sucursal = sucursalFilter
       if (aseguradoraFilter !== "all") params.aseguradora = aseguradoraFilter
       if (search.trim()) params.search = search.trim()
       const res = await segurosAPI.getCobranzas(token, params)
@@ -232,9 +237,9 @@ export default function CobranzasPage() {
     } finally {
       setIsLoading(false)
     }
-  }, [sucursalFilter, aseguradoraFilter, search, toast])
+  }, [aseguradoraFilter, search, toast])
 
-  useEffect(() => { fetchData() }, [sucursalFilter, aseguradoraFilter])
+  useEffect(() => { fetchData() }, [aseguradoraFilter])
 
   // ── Month navigation ─────────────────────────────────────────────────────────
   const prevMonth = () => {
@@ -297,8 +302,8 @@ export default function CobranzasPage() {
   const cuotaVencida   = cobranzas.filter(c => getPagoEstado(c) === "CUOTA_VENCIDA").length
   const compromisoPago = cobranzas.filter(c => getPagoEstado(c) === "COMPROMISO_PAGO").length
 
-  const hasFilters = sucursalFilter !== "all" || aseguradoraFilter !== "all" || search.trim() !== "" || estadoFilter !== "all"
-  const clearFilters = () => { setSucursalFilter("all"); setAseguradoraFilter("all"); setSearch(""); setEstadoFilter("all") }
+  const hasFilters = aseguradoraFilter !== "all" || search.trim() !== "" || estadoFilter !== "all"
+  const clearFilters = () => { setAseguradoraFilter("all"); setSearch(""); setEstadoFilter("all") }
 
   // ── Select payment status from dropdown ─────────────────────────────────────
   const handleSelectEstado = async (c: CobranzaEfectivo, newEstado: EstadoPago) => {
@@ -573,15 +578,6 @@ export default function CobranzasPage() {
                   className="pl-9 bg-secondary/50"
                 />
               </div>
-              <Select value={sucursalFilter} onValueChange={setSucursalFilter}>
-                <SelectTrigger className="w-full sm:w-[160px] bg-secondary/50">
-                  <SelectValue placeholder="Sucursal" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas las sucursales</SelectItem>
-                  {SUCURSALES.map(s => <SelectItem key={s} value={s}>{SUC_LABELS[s] || s}</SelectItem>)}
-                </SelectContent>
-              </Select>
               <Select value={aseguradoraFilter} onValueChange={setAseguradoraFilter}>
                 <SelectTrigger className="w-full sm:w-[150px] bg-secondary/50">
                   <SelectValue placeholder="Aseguradora" />
@@ -645,7 +641,6 @@ export default function CobranzasPage() {
                       <th className="text-left py-3 px-3 font-medium hidden md:table-cell">Patente</th>
                       <th className="text-left py-3 px-3 font-medium hidden lg:table-cell">WhatsApp</th>
                       <th className="text-left py-3 px-3 font-medium hidden lg:table-cell">Día Vto.</th>
-                      <th className="text-left py-3 px-3 font-medium hidden md:table-cell">Sucursal</th>
                       <th className="text-left py-3 px-3 font-medium">{mesLabel}</th>
                       <th className="text-left py-3 px-3 font-medium">Acciones</th>
                     </tr>
@@ -723,10 +718,6 @@ export default function CobranzasPage() {
                                 {c.diaVto}
                               </span>
                             ) : "—"}
-                          </td>
-                          {/* Sucursal */}
-                          <td className="py-3 px-3 hidden md:table-cell text-xs text-muted-foreground">
-                            {c.sucursal ? (SUC_LABELS[c.sucursal] || c.sucursal) : "—"}
                           </td>
                           {/* Estado del mes — dropdown */}
                           <td className="py-3 px-3">
@@ -913,22 +904,6 @@ export default function CobranzasPage() {
                   />
                 </Field>
               </div>
-              <Field>
-                <FieldLabel>Sucursal</FieldLabel>
-                <Select
-                  value={formData.sucursal || ""}
-                  onValueChange={v => setFormData(p => ({ ...p, sucursal: v }))}
-                >
-                  <SelectTrigger className="bg-secondary/50">
-                    <SelectValue placeholder="Seleccionar..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {SUCURSALES.map(s => (
-                      <SelectItem key={s} value={s}>{SUC_LABELS[s] || s}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </Field>
             </FieldGroup>
           </div>
           <DialogFooter className="px-6 py-4 border-t border-border/50 shrink-0">

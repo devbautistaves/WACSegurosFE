@@ -24,7 +24,11 @@ import { segurosAPI, Siniestro } from "@/lib/api"
 import { AlertTriangle, Plus, Search, Edit2, Trash2, X, Clock, CheckCircle2, XCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
 
-const ASEGURADORAS = ["ATM", "BBVA", "SANCOR", "GALENO", "LES"]
+const ASEGURADORAS = [
+  "LA_CAJA", "MERCANTIL_ANDINA", "SAN_CRISTOBAL", "SANCOR", "ALLIANZ",
+  "ZURICH", "GALICIA", "LA_PERSEVERANCIA", "ATM", "BERKLEY",
+  "RIVADAVIA", "MAPFRE", "NACION", "INTEGRITY", "PROVIDENCIA", "PROF", "OTRA",
+]
 const BIENES = ["AUTO", "MOTO", "BICICLETA", "HOGAR", "CELULAR", "OTRO"]
 const TIPOS_SIN = [
   "ROBO_TOTAL", "ROBO_PARCIAL", "DAÑO_TOTAL", "CHOQUE_ACCIDENTE",
