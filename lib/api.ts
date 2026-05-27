@@ -453,6 +453,22 @@ export const notificationsAPI = {
 
 // Announcements (Admin) - Uses multipart/form-data for file uploads
 export const announcementsAPI = {
+  // GET /api/admin/announcements — historial de anuncios creados
+  getAdminHistory: (token: string) =>
+    fetchAPI<{ success: boolean; notifications: Notification[] }>("/api/admin/announcements", { token }),
+
+  // DELETE /api/notifications/:id
+  delete: (token: string, id: string) =>
+    fetchAPI<{ success: boolean }>(`/api/notifications/${id}`, { method: "DELETE", token }),
+
+  // DELETE /api/notifications/bulk — { ids: string[] }
+  deleteMany: (token: string, ids: string[]) =>
+    fetchAPI<{ success: boolean; deleted: number }>("/api/notifications/bulk", {
+      method: "DELETE",
+      token,
+      body: JSON.stringify({ ids }),
+    }),
+
   create: async (token: string, data: CreateAnnouncementData, files?: File[]) => {
     const formData = new FormData()
     formData.append("title", data.title)
