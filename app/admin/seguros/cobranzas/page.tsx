@@ -61,7 +61,7 @@ const PAGO_CONFIG: Record<EstadoPago, { label: string; color: string; bg: string
   PENDIENTE:       { label: "Pendiente",          color: "text-amber-600 dark:text-amber-400",    bg: "bg-amber-500/15",   ring: "ring-amber-500/30"   },
   CUPON_ENVIADO:   { label: "Cupón enviado",       color: "text-blue-600 dark:text-blue-400",      bg: "bg-blue-500/15",    ring: "ring-blue-500/30"    },
   CUOTA_VENCIDA:   { label: "Cuota vencida",       color: "text-red-600 dark:text-red-400",        bg: "bg-red-500/15",     ring: "ring-red-500/30"     },
-  COMPROMISO_PAGO: { label: "Adeudan 2 meses",      color: "text-orange-600 dark:text-orange-400",  bg: "bg-orange-500/15",  ring: "ring-orange-500/30"  },
+  COMPROMISO_PAGO: { label: "Deudor",                color: "text-orange-600 dark:text-orange-400",  bg: "bg-orange-500/15",  ring: "ring-orange-500/30"  },
   NO_CORRESPONDE:  { label: "No corresponde",      color: "text-gray-500",                          bg: "bg-gray-500/15",    ring: "ring-gray-500/30"    },
   ANULADA:         { label: "Anulada",             color: "text-rose-700 dark:text-rose-400",       bg: "bg-rose-500/15",    ring: "ring-rose-500/30"    },
 }
@@ -269,7 +269,9 @@ export default function CobranzasPage() {
   // ── Notification eligibility ─────────────────────────────────────────────────
   const todayDay = new Date().getDate()
   const eligibleProximo = cobranzas.filter(c =>
-    typeof c.diaVto === "number" && (c.diaVto === todayDay + 1 || c.diaVto === todayDay + 2)
+    (typeof c.diaVto === "number" && (c.diaVto === todayDay + 1 || c.diaVto === todayDay + 2)) ||
+    getPagoEstado(c) === "PENDIENTE" ||
+    getPagoEstado(c) === "COMPROMISO_PAGO"
   )
   const eligibleHoy = cobranzas.filter(c =>
     typeof c.diaVto === "number" && c.diaVto === todayDay
@@ -546,7 +548,7 @@ export default function CobranzasPage() {
             { label: "Pendientes",         value: pendientes,     color: "text-amber-500",   bg: "bg-amber-500/10",   estado: "PENDIENTE" as EstadoPago },
             { label: "Cupón enviado",       value: cuponEnviado,   color: "text-blue-500",    bg: "bg-blue-500/10",    estado: "CUPON_ENVIADO" as EstadoPago },
             { label: "Cuota vencida",       value: cuotaVencida,   color: "text-red-500",     bg: "bg-red-500/10",     estado: "CUOTA_VENCIDA" as EstadoPago },
-            { label: "Adeudan 2 meses",      value: compromisoPago, color: "text-orange-500",  bg: "bg-orange-500/10",  estado: "COMPROMISO_PAGO" as EstadoPago },
+            { label: "Deudor",               value: compromisoPago, color: "text-orange-500",  bg: "bg-orange-500/10",  estado: "COMPROMISO_PAGO" as EstadoPago },
           ].map(s => (
             <Card
               key={s.label}
