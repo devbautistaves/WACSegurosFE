@@ -50,7 +50,7 @@ export function Sidebar({ role, userName, onLinkClick }: SidebarProps) {
     ...(role === "admin" ? [{ href: "/admin/users", label: "Usuarios", icon: Users }] : []),
     { href: "/admin/announcements",       label: "Anuncios",       icon: Megaphone },
     { href: "/admin/notifications",       label: "Notificaciones", icon: Bell },
-    { href: "/admin/chat",                label: "Chat",           icon: MessageSquare },
+    ...(role === "admin" ? [{ href: "/admin/chat", label: "Chat", icon: MessageSquare }] : []),
   ]
 
   const sellerLinks = [
