@@ -285,7 +285,16 @@ export default function CobranzasPage() {
   const eligibleHoy = cobranzas.filter(c =>
     typeof c.diaVto === "number" && c.diaVto === todayDay
   )
-  const eligibleVencidos = cobranzas.filter(c => getPagoEstado(c) === "CUOTA_VENCIDA")
+  // "Vencidos sin pago": el cliente no pagó ni el mes seleccionado ni el anterior
+  // (estado distinto a COBRADA / NO_CORRESPONDE / ANULADA en ambos meses).
+  const _prevDate = new Date(currentYear, currentMonth - 1, 1)
+  const mesKeyPrev = `${_prevDate.getFullYear()}-${String(_prevDate.getMonth() + 1).padStart(2, "0")}`
+  const NO_DEBE_FE: EstadoPago[] = ["COBRADA", "NO_CORRESPONDE", "ANULADA"]
+  const debeEnMes = (c: CobranzaEfectivo, mes: string) => {
+    const p = c.pagos.find(x => x.mes === mes)
+    return !p || !NO_DEBE_FE.includes(p.estado)
+  }
+  const eligibleVencidos = cobranzas.filter(c => debeEnMes(c, mesKey) && debeEnMes(c, mesKeyPrev))
 
   const totalEligible = eligibleProximo.length + eligibleHoy.length + eligibleVencidos.length
 
@@ -1189,7 +1198,7 @@ export default function CobranzasPage() {
                     <p className="px-4 py-3 text-xs text-muted-foreground italic">
                       {tipo === "proximo_vencer" && `No hay clientes con vto. días ${todayDay + 1} o ${todayDay + 2}`}
                       {tipo === "vence_hoy" && `No hay clientes con vto. día ${todayDay}`}
-                      {tipo === "vencido" && "No hay cuotas marcadas como vencidas este mes"}
+                      {tipo === "vencido" && "No hay clientes adeudando este mes y el anterior"}
                     </p>
                   ) : (
                     <div className="divide-y divide-border/40">
