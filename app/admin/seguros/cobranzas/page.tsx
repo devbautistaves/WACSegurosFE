@@ -940,7 +940,7 @@ export default function CobranzasPage() {
               }
 
               // Crear array de items con el pago de cada mes (si existe) o fila vacía
-              const items = todosLosMeses.map(mesKey => {
+              const itemsBase = todosLosMeses.map(mesKey => {
                 const pago = pagosRegistrados.find(p => p.mes === mesKey)
                 const [yr, mo] = mesKey.split("-").map(Number)
                 const labelNormalized = `${MONTH_NAMES[mo - 1]} ${yr}`
@@ -951,7 +951,16 @@ export default function CobranzasPage() {
                 }
               }).sort((a, b) => b.mes.localeCompare(a.mes)) // desc
 
-              const cobrados = pagosRegistrados.filter(p => p.estado === "COBRADA").length
+              // Inferir Cobrada para meses pasados: si un mes posterior está COBRADA,
+              // los meses anteriores sin pago explícito (o con PENDIENTE) se asumen cobrados.
+              const lastPaidMes = itemsBase.find(it => it.pago?.estado === "COBRADA")?.mes
+              const items = itemsBase.map(it => {
+                const explicitNonPending = it.pago && it.pago.estado !== "PENDIENTE"
+                const inferredCobrada = !!(lastPaidMes && it.mes < lastPaidMes && !explicitNonPending)
+                return { ...it, inferredCobrada }
+              })
+
+              const cobrados = items.filter(it => it.pago?.estado === "COBRADA" || it.inferredCobrada).length
               const adeudan = todosLosMeses.length - cobrados
 
               return (
@@ -983,14 +992,14 @@ export default function CobranzasPage() {
                     <tbody>
                       {items.map(it => {
                         const p = it.pago
-                        const estado = p?.estado || "PENDIENTE"
+                        const estado: EstadoPago = it.inferredCobrada ? "COBRADA" : (p?.estado || "PENDIENTE")
                         const cfg = PAGO_CONFIG[estado]
                         const fecha = p?.fechaCobro ? new Date(p.fechaCobro).toLocaleDateString("es-AR") : "—"
                         const cuotaTxt = p?.numeroCuota != null
                           ? (c.numeroCuotasTotal ? `${p.numeroCuota} / ${c.numeroCuotasTotal}` : String(p.numeroCuota))
                           : "—"
                         return (
-                          <tr key={it.mes} className={cn("border-b last:border-0 hover:bg-secondary/30", !p && "opacity-60")}>
+                          <tr key={it.mes} className={cn("border-b last:border-0 hover:bg-secondary/30", !p && !it.inferredCobrada && "opacity-60")}>
                             <td className="py-2 px-2 font-medium">{it.mesLabelNormalized}</td>
                             <td className="py-2 px-2 text-muted-foreground">{cuotaTxt}</td>
                             <td className="py-2 px-2">
