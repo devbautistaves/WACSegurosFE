@@ -374,7 +374,6 @@ export default function CobranzasPage() {
     const cuotasTotal = numeroCuotasTotal.trim() === "" ? null : Number(numeroCuotasTotal)
 
     // Optimistic update — incluye numeroCuota y actualiza diaVto al día del cobro
-    const todayDay = new Date().getDate()
     setCobranzas(prev => prev.map(item => {
       if (item._id !== c._id) return item
       const pi = item.pagos.findIndex(p => p.mes === mesKey)
@@ -392,7 +391,6 @@ export default function CobranzasPage() {
       return {
         ...item,
         pagos: newPagos,
-        diaVto: todayDay,
         ...(cuotasTotal !== null ? { numeroCuotasTotal: cuotasTotal } : {}),
       }
     }))
@@ -840,9 +838,6 @@ export default function CobranzasPage() {
                 onChange={e => setCobroDialog(d => ({ ...d, fechaCobro: e.target.value }))}
                 className="bg-secondary/50"
               />
-              <p className="text-[11px] text-muted-foreground mt-1">
-                El día de vencimiento del cliente se actualizará al día de hoy automáticamente.
-              </p>
             </Field>
             <div className="grid grid-cols-2 gap-3">
               <Field>
