@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useCallback, useRef } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { DashboardLayout } from "@/components/layout/dashboard-layout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -160,7 +160,6 @@ export default function CobranzasPage() {
   const today = new Date()
   const [currentYear, setCurrentYear] = useState(today.getFullYear())
   const [currentMonth, setCurrentMonth] = useState(today.getMonth()) // 0-indexed
-  const monthInitialized = useRef(false)
 
   const mesKey   = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}`
   const mesLabel = `${MONTH_NAMES[currentMonth]} ${currentYear}`
@@ -223,24 +222,7 @@ export default function CobranzasPage() {
       if (search.trim()) params.search = search.trim()
       const res = await segurosAPI.getCobranzas(token, params)
       setCobranzas(res.cobranzas)
-      // On first load, jump to the month with the most pago entries
-      if (!monthInitialized.current && res.cobranzas.length > 0) {
-        monthInitialized.current = true
-        const mesCounts: Record<string, number> = {}
-        for (const c of res.cobranzas) {
-          for (const p of c.pagos) {
-            mesCounts[p.mes] = (mesCounts[p.mes] || 0) + 1
-          }
-        }
-        // Pick month with most entries; break ties by choosing the most recent
-        const bestMes = Object.entries(mesCounts)
-          .sort((a, b) => b[1] - a[1] || b[0].localeCompare(a[0]))[0]?.[0]
-        if (bestMes) {
-          const [y, m] = bestMes.split("-").map(Number)
-          setCurrentYear(y)
-          setCurrentMonth(m - 1)
-        }
-      }
+      // Mes inicial = mes actual (no auto-salto a mes con más data)
     } catch {
       toast({ title: "Error", description: "No se pudieron cargar las cobranzas", variant: "destructive" })
     } finally {
