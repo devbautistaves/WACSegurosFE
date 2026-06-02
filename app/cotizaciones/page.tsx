@@ -445,7 +445,7 @@ export default function CotizacionesPage() {
 
           <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
             <p className="text-gray-400 text-sm">
-              &copy; {new Date().getFullYear()} Grupo JV. Todos los derechos reservados.
+              &copy; {new Date().getFullYear()} WAC Seguros. Todos los derechos reservados.
             </p>
             <div className="flex gap-4 text-sm">
               <Link href="#" className="text-gray-400 hover:text-white transition-colors">
