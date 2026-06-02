@@ -141,7 +141,19 @@ export default function InsuranceCommissionsPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [activeTab, setActiveTab] = useState("aseguradoras")
   const [searchTerm, setSearchTerm] = useState("")
-  const [selectedMonth, setSelectedMonth] = useState("2026-02")
+  const MONTH_OPTIONS = (() => {
+    const names = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"]
+    const now = new Date()
+    const out: { value: string; label: string }[] = []
+    for (let i = 0; i < 12; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+      const y = d.getFullYear()
+      const m = d.getMonth() + 1
+      out.push({ value: `${y}-${String(m).padStart(2, "0")}`, label: `${names[m - 1]} ${y}` })
+    }
+    return out
+  })()
+  const [selectedMonth, setSelectedMonth] = useState(MONTH_OPTIONS[0].value)
   const [isConfigDialogOpen, setIsConfigDialogOpen] = useState(false)
   const [selectedAseguradora, setSelectedAseguradora] = useState<ComisionAseguradora | null>(null)
 
@@ -489,9 +501,9 @@ export default function InsuranceCommissionsPage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="2026-02">Febrero 2026</SelectItem>
-                      <SelectItem value="2026-01">Enero 2026</SelectItem>
-                      <SelectItem value="2025-12">Diciembre 2025</SelectItem>
+                      {MONTH_OPTIONS.map(opt => (
+                        <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>

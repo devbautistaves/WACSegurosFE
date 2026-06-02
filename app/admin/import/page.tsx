@@ -102,7 +102,7 @@ export default function ImportPage() {
               Seed de Datos TuPaginaYa
             </CardTitle>
             <CardDescription>
-              Este proceso insertara 13 clientes activados y sus cobranzas (Feb-May 2025) directamente en MongoDB.
+              Este proceso insertara 13 clientes activados y sus cobranzas (Feb-May 2026) directamente en MongoDB.
               Los datos ya estan embebidos en el backend.
             </CardDescription>
           </CardHeader>
@@ -186,7 +186,7 @@ export default function ImportPage() {
         <Card>
           <CardHeader>
             <CardTitle className="text-base sm:text-lg">Vista Previa de Datos a Cargar</CardTitle>
-            <CardDescription>13 clientes activados con cobranzas de Febrero a Mayo 2025</CardDescription>
+            <CardDescription>13 clientes activados con cobranzas de Febrero a Mayo 2026</CardDescription>
           </CardHeader>
           <CardContent className="overflow-x-auto">
             <div className="min-w-[600px]">
