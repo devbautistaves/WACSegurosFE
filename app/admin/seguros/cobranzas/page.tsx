@@ -905,12 +905,46 @@ export default function CobranzasPage() {
             {(() => {
               const c = ctaCteDialog.cobranza
               if (!c) return null
-              const pagos = [...(c.pagos || [])].sort((a, b) => b.mes.localeCompare(a.mes))
-              if (pagos.length === 0) {
+              const pagosRegistrados = c.pagos || []
+              if (pagosRegistrados.length === 0) {
                 return <p className="text-sm text-muted-foreground text-center py-8">Sin movimientos registrados.</p>
               }
-              const cobrados = pagos.filter(p => p.estado === "COBRADA").length
-              const adeudan = pagos.filter(p => ["PENDIENTE","CUOTA_VENCIDA","COMPROMISO_PAGO"].includes(p.estado)).length
+
+              // Generar lista completa de meses entre el primer pago registrado y el mes ACTUAL
+              const mesesRegistrados = pagosRegistrados.map(p => p.mes).sort()
+              const primerMes = mesesRegistrados[0] // YYYY-MM
+              const today = new Date()
+              const mesActual = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`
+
+              // Iterar mes a mes desde primerMes hasta max(últimoRegistrado, mesActual)
+              const ultimoMes = mesActual > mesesRegistrados[mesesRegistrados.length - 1]
+                ? mesActual
+                : mesesRegistrados[mesesRegistrados.length - 1]
+              const todosLosMeses: string[] = []
+              const [py, pm] = primerMes.split("-").map(Number)
+              const [uy, um] = ultimoMes.split("-").map(Number)
+              let y = py, m = pm
+              while (y < uy || (y === uy && m <= um)) {
+                todosLosMeses.push(`${y}-${String(m).padStart(2, "0")}`)
+                m++
+                if (m > 12) { m = 1; y++ }
+              }
+
+              // Crear array de items con el pago de cada mes (si existe) o fila vacía
+              const items = todosLosMeses.map(mesKey => {
+                const pago = pagosRegistrados.find(p => p.mes === mesKey)
+                const [yr, mo] = mesKey.split("-").map(Number)
+                const labelNormalized = `${MONTH_NAMES[mo - 1]} ${yr}`
+                return {
+                  mes: mesKey,
+                  mesLabelNormalized: labelNormalized,
+                  pago,    // PagoMes | undefined
+                }
+              }).sort((a, b) => b.mes.localeCompare(a.mes)) // desc
+
+              const cobrados = pagosRegistrados.filter(p => p.estado === "COBRADA").length
+              const adeudan = todosLosMeses.length - cobrados
+
               return (
                 <>
                   <div className="grid grid-cols-3 gap-2 mb-4 text-center text-xs">
@@ -919,12 +953,12 @@ export default function CobranzasPage() {
                       <p className="font-bold text-lg text-emerald-600">{cobrados}</p>
                     </div>
                     <div className="rounded-lg border bg-amber-500/5 border-amber-500/30 px-3 py-2">
-                      <p className="text-muted-foreground">Adeudan</p>
+                      <p className="text-muted-foreground">Adeudan / pendientes</p>
                       <p className="font-bold text-lg text-amber-600">{adeudan}</p>
                     </div>
                     <div className="rounded-lg border bg-slate-500/5 border-slate-500/30 px-3 py-2">
-                      <p className="text-muted-foreground">Total registros</p>
-                      <p className="font-bold text-lg">{pagos.length}</p>
+                      <p className="text-muted-foreground">Total meses</p>
+                      <p className="font-bold text-lg">{todosLosMeses.length}</p>
                     </div>
                   </div>
                   <table className="w-full text-sm">
@@ -938,23 +972,25 @@ export default function CobranzasPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {pagos.map(p => {
-                        const cfg = PAGO_CONFIG[p.estado]
-                        const fecha = p.fechaCobro ? new Date(p.fechaCobro).toLocaleDateString("es-AR") : "—"
-                        const cuotaTxt = p.numeroCuota != null
+                      {items.map(it => {
+                        const p = it.pago
+                        const estado = p?.estado || "PENDIENTE"
+                        const cfg = PAGO_CONFIG[estado]
+                        const fecha = p?.fechaCobro ? new Date(p.fechaCobro).toLocaleDateString("es-AR") : "—"
+                        const cuotaTxt = p?.numeroCuota != null
                           ? (c.numeroCuotasTotal ? `${p.numeroCuota} / ${c.numeroCuotasTotal}` : String(p.numeroCuota))
                           : "—"
                         return (
-                          <tr key={p.mes} className="border-b last:border-0 hover:bg-secondary/30">
-                            <td className="py-2 px-2 font-medium">{p.mesLabel || p.mes}</td>
+                          <tr key={it.mes} className={cn("border-b last:border-0 hover:bg-secondary/30", !p && "opacity-60")}>
+                            <td className="py-2 px-2 font-medium">{it.mesLabelNormalized}</td>
                             <td className="py-2 px-2 text-muted-foreground">{cuotaTxt}</td>
                             <td className="py-2 px-2">
                               <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium", cfg?.bg, cfg?.color)}>
-                                {cfg?.label || p.estado}
+                                {cfg?.label || estado}
                               </span>
                             </td>
                             <td className="py-2 px-2 text-muted-foreground">{fecha}</td>
-                            <td className="py-2 px-2 text-muted-foreground">{p.cobradoPor || "—"}</td>
+                            <td className="py-2 px-2 text-muted-foreground">{p?.cobradoPor || "—"}</td>
                           </tr>
                         )
                       })}
