@@ -27,6 +27,7 @@ import {
   CheckCircle2, Clock, ChevronLeft, ChevronRight,
   Phone, Car, MessageCircle, ChevronDown,
   Mail, BellRing, AlertTriangle, Send, RefreshCw,
+  BookOpen, Calendar, User as UserIcon, XCircle, MinusCircle,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -182,7 +183,15 @@ export default function CobranzasPage() {
     cobranza: CobranzaEfectivo | null
     fechaCobro: string
     cobradoPor: string
-  }>({ open: false, cobranza: null, fechaCobro: new Date().toISOString().substring(0, 10), cobradoPor: "" })
+    numeroCuota: string
+    numeroCuotasTotal: string
+  }>({ open: false, cobranza: null, fechaCobro: new Date().toISOString().substring(0, 10), cobradoPor: "", numeroCuota: "", numeroCuotasTotal: "" })
+
+  // Cuenta corriente dialog (historial de cuotas/pagos)
+  const [ctaCteDialog, setCtaCteDialog] = useState<{ open: boolean; cobranza: CobranzaEfectivo | null }>({
+    open: false,
+    cobranza: null,
+  })
 
   // Updating a pago inline
   const [updatingPago, setUpdatingPago] = useState<string | null>(null)
@@ -313,13 +322,19 @@ export default function CobranzasPage() {
     if (!token || updatingPago === c._id) return
     if (getPagoEstado(c) === newEstado) return
 
-    // COBRADA requires capturing date + collector name
+    // COBRADA requires capturing date + collector name + cuota number
     if (newEstado === "COBRADA") {
+      // Sugerir n° de cuota = (último n° cobrado) + 1
+      const pagosCobrados = (c.pagos || []).filter(p => p.estado === "COBRADA" && typeof p.numeroCuota === "number")
+      const maxCuota = pagosCobrados.reduce((max, p) => Math.max(max, p.numeroCuota || 0), 0)
+      const sugerida = maxCuota > 0 ? String(maxCuota + 1) : ""
       setCobroDialog({
         open: true,
         cobranza: c,
         fechaCobro: new Date().toISOString().substring(0, 10),
         cobradoPor: "",
+        numeroCuota: sugerida,
+        numeroCuotasTotal: c.numeroCuotasTotal != null ? String(c.numeroCuotasTotal) : "",
       })
       return
     }
@@ -354,24 +369,47 @@ export default function CobranzasPage() {
     if (!token || !c) return
 
     setUpdatingPago(c._id)
-    const { fechaCobro, cobradoPor } = cobroDialog
+    const { fechaCobro, cobradoPor, numeroCuota, numeroCuotasTotal } = cobroDialog
+    const cuota = numeroCuota.trim() === "" ? null : Number(numeroCuota)
+    const cuotasTotal = numeroCuotasTotal.trim() === "" ? null : Number(numeroCuotasTotal)
 
-    // Optimistic update
+    // Optimistic update — incluye numeroCuota y actualiza diaVto al día del cobro
+    const todayDay = new Date().getDate()
     setCobranzas(prev => prev.map(item => {
       if (item._id !== c._id) return item
       const pi = item.pagos.findIndex(p => p.mes === mesKey)
-      const updated: PagoMes = { mes: mesKey, mesLabel, estado: "COBRADA", cobradoPor, fechaCobro }
-      if (pi >= 0) {
-        const newPagos = [...item.pagos]
-        newPagos[pi] = { ...newPagos[pi], ...updated }
-        return { ...item, pagos: newPagos }
+      const updated: PagoMes = {
+        mes: mesKey,
+        mesLabel,
+        estado: "COBRADA",
+        cobradoPor,
+        fechaCobro,
+        numeroCuota: cuota,
       }
-      return { ...item, pagos: [...item.pagos, updated] }
+      const newPagos = pi >= 0
+        ? item.pagos.map((p, i) => i === pi ? { ...p, ...updated } : p)
+        : [...item.pagos, updated]
+      return {
+        ...item,
+        pagos: newPagos,
+        diaVto: todayDay,
+        ...(cuotasTotal !== null ? { numeroCuotasTotal: cuotasTotal } : {}),
+      }
     }))
     setCobroDialog(d => ({ ...d, open: false }))
 
     try {
-      await segurosAPI.updatePago(token, c._id, mesKey, mesLabel, "COBRADA", cobradoPor || undefined, fechaCobro || undefined)
+      await segurosAPI.updatePago(
+        token,
+        c._id,
+        mesKey,
+        mesLabel,
+        "COBRADA",
+        cobradoPor || undefined,
+        fechaCobro || undefined,
+        cuota,
+        cuotasTotal,
+      )
       toast({ title: "Cobro registrado", description: `${c.nombreApellido} — ${mesLabel}` })
     } catch {
       toast({ title: "Error", description: "No se pudo registrar el cobro", variant: "destructive" })
@@ -737,6 +775,15 @@ export default function CobranzasPage() {
                           {/* Actions */}
                           <td className="py-3 px-3">
                             <div className="flex gap-1">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                title="Cuenta corriente"
+                                className="text-blue-600 hover:text-blue-700 hover:bg-blue-500/10"
+                                onClick={(e) => { e.stopPropagation(); setCtaCteDialog({ open: true, cobranza: c }) }}
+                              >
+                                <BookOpen className="h-4 w-4" />
+                              </Button>
                               {c.whatsapp && (
                                 <Button
                                   variant="ghost"
@@ -793,7 +840,36 @@ export default function CobranzasPage() {
                 onChange={e => setCobroDialog(d => ({ ...d, fechaCobro: e.target.value }))}
                 className="bg-secondary/50"
               />
+              <p className="text-[11px] text-muted-foreground mt-1">
+                El día de vencimiento del cliente se actualizará al día de hoy automáticamente.
+              </p>
             </Field>
+            <div className="grid grid-cols-2 gap-3">
+              <Field>
+                <FieldLabel>N° de cuota</FieldLabel>
+                <Input
+                  type="number"
+                  inputMode="numeric"
+                  min={1}
+                  value={cobroDialog.numeroCuota}
+                  onChange={e => setCobroDialog(d => ({ ...d, numeroCuota: e.target.value }))}
+                  placeholder="Ej: 3"
+                  className="bg-secondary/50"
+                />
+              </Field>
+              <Field>
+                <FieldLabel>Total cuotas</FieldLabel>
+                <Input
+                  type="number"
+                  inputMode="numeric"
+                  min={1}
+                  value={cobroDialog.numeroCuotasTotal}
+                  onChange={e => setCobroDialog(d => ({ ...d, numeroCuotasTotal: e.target.value }))}
+                  placeholder="Ej: 12"
+                  className="bg-secondary/50"
+                />
+              </Field>
+            </div>
             <Field>
               <FieldLabel>Cobrado por</FieldLabel>
               <Input
@@ -811,6 +887,91 @@ export default function CobranzasPage() {
             <Button onClick={handleConfirmCobro} className="bg-emerald-600 hover:bg-emerald-700 text-white">
               <CheckCircle2 className="mr-2 h-4 w-4" />
               Confirmar cobro
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Cuenta Corriente Dialog ──────────────────────────────────────────── */}
+      <Dialog open={ctaCteDialog.open} onOpenChange={open => setCtaCteDialog(d => ({ ...d, open }))}>
+        <DialogContent className="sm:max-w-[640px] flex flex-col max-h-[92dvh] p-0 gap-0">
+          <DialogHeader className="px-6 pt-6 pb-3 shrink-0 border-b">
+            <DialogTitle className="flex items-center gap-2">
+              <BookOpen className="h-5 w-5 text-blue-500" />
+              Cuenta corriente
+            </DialogTitle>
+            <DialogDescription>
+              {ctaCteDialog.cobranza?.nombreApellido}
+              {ctaCteDialog.cobranza?.aseguradora && ` · ${ASEG_LABELS[ctaCteDialog.cobranza.aseguradora] || ctaCteDialog.cobranza.aseguradora}`}
+              {ctaCteDialog.cobranza?.numeroCuotasTotal ? ` · Plan: ${ctaCteDialog.cobranza.numeroCuotasTotal} cuotas` : ""}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto px-6 py-4">
+            {(() => {
+              const c = ctaCteDialog.cobranza
+              if (!c) return null
+              const pagos = [...(c.pagos || [])].sort((a, b) => b.mes.localeCompare(a.mes))
+              if (pagos.length === 0) {
+                return <p className="text-sm text-muted-foreground text-center py-8">Sin movimientos registrados.</p>
+              }
+              const cobrados = pagos.filter(p => p.estado === "COBRADA").length
+              const adeudan = pagos.filter(p => ["PENDIENTE","CUOTA_VENCIDA","COMPROMISO_PAGO"].includes(p.estado)).length
+              return (
+                <>
+                  <div className="grid grid-cols-3 gap-2 mb-4 text-center text-xs">
+                    <div className="rounded-lg border bg-emerald-500/5 border-emerald-500/30 px-3 py-2">
+                      <p className="text-muted-foreground">Cobradas</p>
+                      <p className="font-bold text-lg text-emerald-600">{cobrados}</p>
+                    </div>
+                    <div className="rounded-lg border bg-amber-500/5 border-amber-500/30 px-3 py-2">
+                      <p className="text-muted-foreground">Adeudan</p>
+                      <p className="font-bold text-lg text-amber-600">{adeudan}</p>
+                    </div>
+                    <div className="rounded-lg border bg-slate-500/5 border-slate-500/30 px-3 py-2">
+                      <p className="text-muted-foreground">Total registros</p>
+                      <p className="font-bold text-lg">{pagos.length}</p>
+                    </div>
+                  </div>
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b text-xs uppercase text-muted-foreground">
+                        <th className="py-2 px-2 text-left font-medium">Mes</th>
+                        <th className="py-2 px-2 text-left font-medium">Cuota</th>
+                        <th className="py-2 px-2 text-left font-medium">Estado</th>
+                        <th className="py-2 px-2 text-left font-medium">Fecha cobro</th>
+                        <th className="py-2 px-2 text-left font-medium">Por</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {pagos.map(p => {
+                        const cfg = PAGO_CONFIG[p.estado]
+                        const fecha = p.fechaCobro ? new Date(p.fechaCobro).toLocaleDateString("es-AR") : "—"
+                        const cuotaTxt = p.numeroCuota != null
+                          ? (c.numeroCuotasTotal ? `${p.numeroCuota} / ${c.numeroCuotasTotal}` : String(p.numeroCuota))
+                          : "—"
+                        return (
+                          <tr key={p.mes} className="border-b last:border-0 hover:bg-secondary/30">
+                            <td className="py-2 px-2 font-medium">{p.mesLabel || p.mes}</td>
+                            <td className="py-2 px-2 text-muted-foreground">{cuotaTxt}</td>
+                            <td className="py-2 px-2">
+                              <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium", cfg?.bg, cfg?.color)}>
+                                {cfg?.label || p.estado}
+                              </span>
+                            </td>
+                            <td className="py-2 px-2 text-muted-foreground">{fecha}</td>
+                            <td className="py-2 px-2 text-muted-foreground">{p.cobradoPor || "—"}</td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </>
+              )
+            })()}
+          </div>
+          <DialogFooter className="px-6 py-3 border-t shrink-0">
+            <Button variant="outline" onClick={() => setCtaCteDialog({ open: false, cobranza: null })}>
+              Cerrar
             </Button>
           </DialogFooter>
         </DialogContent>

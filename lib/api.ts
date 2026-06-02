@@ -2768,6 +2768,7 @@ export interface PagoMes {
   estado: "COBRADA" | "CUPON_ENVIADO" | "CUOTA_VENCIDA" | "COMPROMISO_PAGO" | "NO_CORRESPONDE" | "ANULADA" | "PENDIENTE"
   cobradoPor?: string
   fechaCobro?: string
+  numeroCuota?: number | null
 }
 
 export interface EmailNotificacion {
@@ -2783,6 +2784,7 @@ export interface CobranzaEfectivo {
   _id: string
   sucursal?: string
   diaVto?: number
+  numeroCuotasTotal?: number | null
   nombreApellido: string
   email?: string
   ramo?: string
@@ -2836,11 +2838,21 @@ export const segurosAPI = {
     fetchAPI<{ success: boolean; cobranza: CobranzaEfectivo }>("/api/seguros/cobranzas", { method: "POST", token, body: JSON.stringify(data) }),
   updateCobranza: (token: string, id: string, data: Partial<CobranzaEfectivo>) =>
     fetchAPI<{ success: boolean; cobranza: CobranzaEfectivo }>(`/api/seguros/cobranzas/${id}`, { method: "PUT", token, body: JSON.stringify(data) }),
-  updatePago: (token: string, id: string, mes: string, mesLabel: string, estado: string, cobradoPor?: string, fechaCobro?: string) =>
+  updatePago: (
+    token: string,
+    id: string,
+    mes: string,
+    mesLabel: string,
+    estado: string,
+    cobradoPor?: string,
+    fechaCobro?: string,
+    numeroCuota?: number | null,
+    numeroCuotasTotal?: number | null,
+  ) =>
     fetchAPI<{ success: boolean; cobranza: CobranzaEfectivo }>(`/api/seguros/cobranzas/${id}/pago`, {
       method: "PATCH",
       token,
-      body: JSON.stringify({ mes, mesLabel, estado, cobradoPor, fechaCobro }),
+      body: JSON.stringify({ mes, mesLabel, estado, cobradoPor, fechaCobro, numeroCuota, numeroCuotasTotal }),
     }),
   deleteCobranza: (token: string, id: string) =>
     fetchAPI<{ success: boolean }>(`/api/seguros/cobranzas/${id}`, { method: "DELETE", token }),
