@@ -184,7 +184,7 @@ export default function CobranzasPage() {
     cobradoPor: string
     numeroCuota: string
     numeroCuotasTotal: string
-  }>({ open: false, cobranza: null, fechaCobro: new Date().toISOString().substring(0, 10), cobradoPor: "", numeroCuota: "", numeroCuotasTotal: "" })
+  }>({ open: false, cobranza: null, fechaCobro: new Date().toLocaleDateString("sv-SE"), cobradoPor: "", numeroCuota: "", numeroCuotasTotal: "" })
 
   // Cuenta corriente dialog (historial de cuotas/pagos)
   const [ctaCteDialog, setCtaCteDialog] = useState<{ open: boolean; cobranza: CobranzaEfectivo | null }>({
@@ -322,7 +322,7 @@ export default function CobranzasPage() {
       setCobroDialog({
         open: true,
         cobranza: c,
-        fechaCobro: new Date().toISOString().substring(0, 10),
+        fechaCobro: new Date().toLocaleDateString("sv-SE"),
         cobradoPor: "",
         numeroCuota: sugerida,
         numeroCuotasTotal: c.numeroCuotasTotal != null ? String(c.numeroCuotasTotal) : "",
