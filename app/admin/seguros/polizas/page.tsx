@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, Suspense } from "react"
+import { useEffect, useState, Suspense, useRef } from "react"
 import { useSearchParams } from "next/navigation"
 import { DashboardLayout } from "@/components/layout/dashboard-layout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -24,6 +24,7 @@ import { segurosAPI, Poliza } from "@/lib/api"
 import {
   Shield, Plus, Search, Filter, Edit2, Trash2, X, CheckCircle2,
   XCircle, Clock, Car, Bike, Home, User, Banknote, ChevronLeft, ChevronRight,
+  Loader2, UserCheck,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -122,6 +123,50 @@ function PolizasPageInner() {
   const [selectedPoliza, setSelectedPoliza] = useState<Poliza | null>(null)
   const [formData, setFormData] = useState<Partial<Poliza>>(EMPTY_FORM)
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // Autocomplete de asegurados (solo en creación)
+  type AseguradoSug = Awaited<ReturnType<typeof segurosAPI.buscarAsegurados>>["asegurados"][number]
+  const [aseguradoSugs, setAseguradoSugs] = useState<AseguradoSug[]>([])
+  const [aseguradoLoading, setAseguradoLoading] = useState(false)
+  const [aseguradoOpen, setAseguradoOpen] = useState(false)
+  const [aseguradoFromPick, setAseguradoFromPick] = useState(false)
+  const aseguradoBlurTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    if (selectedPoliza) return
+    if (aseguradoFromPick) { setAseguradoFromPick(false); return }
+    const q = (formData.nombreApellido || "").trim()
+    if (q.length < 2) { setAseguradoSugs([]); setAseguradoOpen(false); return }
+    const token = localStorage.getItem("token")
+    if (!token) return
+    const t = setTimeout(async () => {
+      try {
+        setAseguradoLoading(true)
+        const res = await segurosAPI.buscarAsegurados(token, q, 8)
+        setAseguradoSugs(res.asegurados || [])
+        setAseguradoOpen((res.asegurados || []).length > 0)
+      } catch { /* silenciar */ }
+      finally { setAseguradoLoading(false) }
+    }, 280)
+    return () => clearTimeout(t)
+  }, [formData.nombreApellido, selectedPoliza, aseguradoFromPick])
+
+  const pickAsegurado = (a: AseguradoSug) => {
+    setAseguradoFromPick(true)
+    setFormData(prev => ({
+      ...prev,
+      nombreApellido: a.nombreApellido || prev.nombreApellido,
+      dni: a.dni || prev.dni,
+      fechaNacimiento: a.fechaNacimiento || prev.fechaNacimiento,
+      celular: a.celular || prev.celular,
+      email: a.email || prev.email,
+      domicilio: a.domicilio || prev.domicilio,
+      localidad: a.localidad || prev.localidad,
+      cp: a.cp || prev.cp,
+    }))
+    setAseguradoOpen(false)
+    setAseguradoSugs([])
+  }
 
   const { toast } = useToast()
 
@@ -508,7 +553,65 @@ function PolizasPageInner() {
 
               <Field>
                 <FieldLabel>Nombre y Apellido *</FieldLabel>
-                <Input value={formData.nombreApellido || ""} onChange={field("nombreApellido")} placeholder="APELLIDO NOMBRE" className="bg-secondary/50" />
+                <div className="relative">
+                  <Input
+                    value={formData.nombreApellido || ""}
+                    onChange={field("nombreApellido")}
+                    onFocus={() => { if (!selectedPoliza && aseguradoSugs.length > 0) setAseguradoOpen(true) }}
+                    onBlur={() => {
+                      if (aseguradoBlurTimer.current) clearTimeout(aseguradoBlurTimer.current)
+                      aseguradoBlurTimer.current = setTimeout(() => setAseguradoOpen(false), 150)
+                    }}
+                    placeholder="APELLIDO NOMBRE"
+                    className="bg-secondary/50 pr-9"
+                    autoComplete="off"
+                  />
+                  {!selectedPoliza && aseguradoLoading && (
+                    <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+                  )}
+                  {!selectedPoliza && aseguradoOpen && aseguradoSugs.length > 0 && (
+                    <div className="absolute z-50 left-0 right-0 mt-1 rounded-lg border border-border bg-popover shadow-xl overflow-hidden">
+                      <div className="flex items-center gap-2 px-3 py-2 border-b border-border/60 bg-muted/40">
+                        <UserCheck className="h-3.5 w-3.5 text-emerald-500" />
+                        <p className="text-xs font-medium text-muted-foreground">
+                          {aseguradoSugs.length} {aseguradoSugs.length === 1 ? "asegurado encontrado" : "asegurados encontrados"} — clic para autocompletar
+                        </p>
+                      </div>
+                      <ul className="max-h-72 overflow-y-auto">
+                        {aseguradoSugs.map((a, i) => (
+                          <li key={`${a.dni || ""}-${a.nombreApellido}-${i}`}>
+                            <button
+                              type="button"
+                              onMouseDown={e => e.preventDefault()}
+                              onClick={() => pickAsegurado(a)}
+                              className="w-full text-left px-3 py-2.5 hover:bg-accent transition-colors flex items-start justify-between gap-3"
+                            >
+                              <div className="flex-1 min-w-0">
+                                <p className="font-medium text-sm truncate">{a.nombreApellido}</p>
+                                <p className="text-xs text-muted-foreground truncate">
+                                  {[
+                                    a.dni && `DNI ${a.dni}`,
+                                    a.celular && a.celular,
+                                    a.email && a.email,
+                                    a.localidad && a.localidad,
+                                  ].filter(Boolean).join(" · ") || "Sin más datos cargados"}
+                                </p>
+                              </div>
+                              <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 whitespace-nowrap flex-shrink-0">
+                                {a.cantPolizas} {a.cantPolizas === 1 ? "póliza" : "pólizas"}
+                              </span>
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+                {!selectedPoliza && (
+                  <p className="text-[11px] text-muted-foreground mt-1">
+                    💡 Tipeá el apellido para autocompletar datos de pólizas anteriores del mismo cliente.
+                  </p>
+                )}
               </Field>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

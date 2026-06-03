@@ -2817,6 +2817,23 @@ export const segurosAPI = {
   deletePoliza: (token: string, id: string) =>
     fetchAPI<{ success: boolean }>(`/api/seguros/polizas/${id}`, { method: "DELETE", token }),
 
+  // Asegurados — autocompletado para nueva póliza
+  buscarAsegurados: (token: string, q: string, limit = 10) =>
+    fetchAPI<{
+      success: boolean
+      asegurados: Array<{
+        nombreApellido: string
+        dni?: string
+        fechaNacimiento?: string
+        celular?: string
+        email?: string
+        domicilio?: string
+        localidad?: string
+        cp?: string
+        cantPolizas: number
+      }>
+    }>(`/api/seguros/asegurados/buscar?q=${encodeURIComponent(q)}&limit=${limit}`, { token }),
+
   // Siniestros
   getSiniestros: (token: string, params?: Record<string, string>) => {
     const qs = params ? "?" + new URLSearchParams(params).toString() : ""
