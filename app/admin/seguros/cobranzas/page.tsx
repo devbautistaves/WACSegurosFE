@@ -31,6 +31,21 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
+// ── Helpers de fecha (timezone-safe) ──────────────────────────────────────────
+function localDateStr(): string {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
+}
+function fmtFechaCobro(fecha: string | Date | undefined | null): string {
+  if (!fecha) return "—"
+  return new Date(fecha).toLocaleDateString("es-AR", {
+    timeZone: "America/Argentina/Buenos_Aires",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  })
+}
+
 // ── Constants ──────────────────────────────────────────────────────────────────
 const ASEGURADORAS = [
   "LA_CAJA", "MERCANTIL_ANDINA", "SAN_CRISTOBAL", "SANCOR", "ALLIANZ",
@@ -184,7 +199,7 @@ export default function CobranzasPage() {
     cobradoPor: string
     numeroCuota: string
     numeroCuotasTotal: string
-  }>({ open: false, cobranza: null, fechaCobro: new Date().toLocaleDateString("sv-SE"), cobradoPor: "", numeroCuota: "", numeroCuotasTotal: "" })
+  }>({ open: false, cobranza: null, fechaCobro: localDateStr(), cobradoPor: "", numeroCuota: "", numeroCuotasTotal: "" })
 
   // Cuenta corriente dialog (historial de cuotas/pagos)
   const [ctaCteDialog, setCtaCteDialog] = useState<{ open: boolean; cobranza: CobranzaEfectivo | null }>({
@@ -322,7 +337,7 @@ export default function CobranzasPage() {
       setCobroDialog({
         open: true,
         cobranza: c,
-        fechaCobro: new Date().toLocaleDateString("sv-SE"),
+        fechaCobro: localDateStr(),
         cobradoPor: "",
         numeroCuota: sugerida,
         numeroCuotasTotal: c.numeroCuotasTotal != null ? String(c.numeroCuotasTotal) : "",
@@ -696,7 +711,7 @@ export default function CobranzasPage() {
                             {estado === "COBRADA" && pagoData?.cobradoPor && (
                               <div className="text-xs text-emerald-600 dark:text-emerald-400 mt-0.5">
                                 ✓ {pagoData.cobradoPor}
-                                {pagoData.fechaCobro && ` — ${new Date(pagoData.fechaCobro).toLocaleDateString("es-AR")}`}
+                                {pagoData.fechaCobro && ` — ${fmtFechaCobro(pagoData.fechaCobro)}`}
                               </div>
                             )}
                             {/* Email notification badge */}
@@ -976,7 +991,7 @@ export default function CobranzasPage() {
                         const p = it.pago
                         const estado: EstadoPago = it.inferredCobrada ? "COBRADA" : (p?.estado || "PENDIENTE")
                         const cfg = PAGO_CONFIG[estado]
-                        const fecha = p?.fechaCobro ? new Date(p.fechaCobro).toLocaleDateString("es-AR") : "—"
+                        const fecha = fmtFechaCobro(p?.fechaCobro)
                         const cuotaTxt = p?.numeroCuota != null
                           ? (c.numeroCuotasTotal ? `${p.numeroCuota} / ${c.numeroCuotasTotal}` : String(p.numeroCuota))
                           : "—"
