@@ -394,7 +394,7 @@ function PolizasPageInner() {
                 <SelectTrigger className="w-full sm:w-[150px] bg-secondary/50"><SelectValue placeholder="Ramo" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos los ramos</SelectItem>
-                  {RAMOS.map(r => <SelectItem key={r} value={r}>{RAMO_LABELS[r]}</SelectItem>)}
+                  {RAMOS.map(r => <SelectItem key={r} value={r}>{RAMO_LABELS[r] || r}</SelectItem>)}
                 </SelectContent>
               </Select>
               <Button variant="default" size="sm" onClick={handleSearch} className="bg-emerald-600 hover:bg-emerald-700">
@@ -550,7 +550,7 @@ function PolizasPageInner() {
                   <FieldLabel>Ramo</FieldLabel>
                   <Select value={formData.ramo || ""} onValueChange={v => setFormData(p => ({ ...p, ramo: v as any }))}>
                     <SelectTrigger className="bg-secondary/50"><SelectValue placeholder="Seleccionar..." /></SelectTrigger>
-                    <SelectContent>{RAMOS.map(r => <SelectItem key={r} value={r}>{RAMO_LABELS[r]}</SelectItem>)}</SelectContent>
+                    <SelectContent>{RAMOS.map(r => <SelectItem key={r} value={r}>{RAMO_LABELS[r] || r}</SelectItem>)}</SelectContent>
                   </Select>
                 </Field>
               </div>
