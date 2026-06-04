@@ -21,10 +21,11 @@ import {
 import { FieldGroup, Field, FieldLabel } from "@/components/ui/field"
 import { MonthNavigator } from "@/components/ui/month-navigator"
 import { segurosAPI, Poliza } from "@/lib/api"
+import { buscarLocalidad, type LocalidadAR } from "@/lib/localidades-ar"
 import {
   Shield, Plus, Search, Filter, Edit2, Trash2, X, CheckCircle2,
   XCircle, Clock, Car, Bike, Home, User, Banknote, ChevronLeft, ChevronRight,
-  Loader2, UserCheck,
+  Loader2, UserCheck, MapPin,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -166,6 +167,32 @@ function PolizasPageInner() {
     }))
     setAseguradoOpen(false)
     setAseguradoSugs([])
+  }
+
+  // Autocomplete de Localidad → autocompleta CP. Dataset local (sin requests).
+  const [localidadSugs, setLocalidadSugs] = useState<LocalidadAR[]>([])
+  const [localidadOpen, setLocalidadOpen] = useState(false)
+  const [localidadFromPick, setLocalidadFromPick] = useState(false)
+  const localidadBlurTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    if (localidadFromPick) { setLocalidadFromPick(false); return }
+    const q = (formData.localidad || "").trim()
+    if (q.length < 2) { setLocalidadSugs([]); setLocalidadOpen(false); return }
+    const results = buscarLocalidad(q, 8)
+    setLocalidadSugs(results)
+    setLocalidadOpen(results.length > 0)
+  }, [formData.localidad, localidadFromPick])
+
+  const pickLocalidad = (loc: LocalidadAR) => {
+    setLocalidadFromPick(true)
+    setFormData(prev => ({
+      ...prev,
+      localidad: loc.nombre,
+      cp: loc.cp,
+    }))
+    setLocalidadOpen(false)
+    setLocalidadSugs([])
   }
 
   const { toast } = useToast()
@@ -643,7 +670,51 @@ function PolizasPageInner() {
                 </Field>
                 <Field>
                   <FieldLabel>Localidad</FieldLabel>
-                  <Input value={formData.localidad || ""} onChange={field("localidad")} placeholder="Localidad" className="bg-secondary/50" />
+                  <div className="relative">
+                    <Input
+                      value={formData.localidad || ""}
+                      onChange={field("localidad")}
+                      onFocus={() => { if (localidadSugs.length > 0) setLocalidadOpen(true) }}
+                      onBlur={() => {
+                        if (localidadBlurTimer.current) clearTimeout(localidadBlurTimer.current)
+                        localidadBlurTimer.current = setTimeout(() => setLocalidadOpen(false), 150)
+                      }}
+                      placeholder="Ej: Berazategui"
+                      className="bg-secondary/50 pl-8"
+                      autoComplete="off"
+                    />
+                    <MapPin className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                    {localidadOpen && localidadSugs.length > 0 && (
+                      <div className="absolute z-50 left-0 right-0 mt-1 rounded-lg border border-border bg-popover shadow-xl overflow-hidden">
+                        <div className="flex items-center gap-2 px-3 py-2 border-b border-border/60 bg-muted/40">
+                          <MapPin className="h-3.5 w-3.5 text-blue-500" />
+                          <p className="text-xs font-medium text-muted-foreground">
+                            {localidadSugs.length} {localidadSugs.length === 1 ? "localidad" : "localidades"} — clic para autocompletar el CP
+                          </p>
+                        </div>
+                        <ul className="max-h-64 overflow-y-auto">
+                          {localidadSugs.map((loc, i) => (
+                            <li key={`${loc.cp}-${loc.nombre}-${i}`}>
+                              <button
+                                type="button"
+                                onMouseDown={e => e.preventDefault()}
+                                onClick={() => pickLocalidad(loc)}
+                                className="w-full text-left px-3 py-2 hover:bg-accent transition-colors flex items-center justify-between gap-3"
+                              >
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-medium text-sm truncate">{loc.nombre}</p>
+                                  <p className="text-[11px] text-muted-foreground truncate">{loc.provincia}</p>
+                                </div>
+                                <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-blue-500/15 text-blue-600 whitespace-nowrap flex-shrink-0">
+                                  CP {loc.cp}
+                                </span>
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
                 </Field>
                 <Field>
                   <FieldLabel>CP</FieldLabel>
