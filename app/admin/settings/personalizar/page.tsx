@@ -70,10 +70,16 @@ export default function PersonalizarPage() {
 
   const syncLocalStorage = (next: BrandingSettings) => {
     try {
+      // Importante: guardar TAMBIÉN los catálogos porque el hook useCatalogos
+      // los lee desde acá y si no están, cae al default hardcoded del CRM
+      // (lo que hacía parecer que la edición no impactaba).
       localStorage.setItem("branding", JSON.stringify({
         nombre: next.nombre || "",
         logo: next.logo || "",
         colorPrimario: next.colorPrimario || "#1e40af",
+        aseguradorasCatalogo: Array.isArray(next.aseguradorasCatalogo) ? next.aseguradorasCatalogo : [],
+        ramosCatalogo: Array.isArray(next.ramosCatalogo) ? next.ramosCatalogo : [],
+        mediosPagoCatalogo: Array.isArray((next as any).mediosPagoCatalogo) ? (next as any).mediosPagoCatalogo : [],
       }))
     } catch {}
     try { window.dispatchEvent(new Event("branding-updated")) } catch {}
