@@ -1,5 +1,7 @@
 "use client"
 
+
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
@@ -35,11 +37,19 @@ export function Sidebar({ role, userName, onLinkClick }: SidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
 
-  // Branding cacheado en localStorage por la página /admin/settings/personalizar
+  // Branding reactivo: se re-lee cuando emiten "branding-updated"
+  const [brandingTick, setBrandingTick] = useState(0)
+  useEffect(() => {
+    const h = () => setBrandingTick(t => t + 1)
+    window.addEventListener("branding-updated", h)
+    return () => window.removeEventListener("branding-updated", h)
+  }, [])
   let brandingFromStorage: { nombre?: string; logo?: string; colorPrimario?: string } = {}
   if (typeof window !== "undefined") {
     try { const raw = localStorage.getItem("branding"); if (raw) brandingFromStorage = JSON.parse(raw) } catch {}
   }
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _bt = brandingTick // forzar re-render
   const brandingLogo = brandingFromStorage.logo || ""
   const brandingNombre = brandingFromStorage.nombre || ""
 

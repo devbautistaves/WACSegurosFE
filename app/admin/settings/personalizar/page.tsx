@@ -76,6 +76,7 @@ export default function PersonalizarPage() {
         colorPrimario: next.colorPrimario || "#1e40af",
       }))
     } catch {}
+    try { window.dispatchEvent(new Event("branding-updated")) } catch {}
   }
 
   const guardar = async () => {

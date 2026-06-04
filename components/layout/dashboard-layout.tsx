@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { Sidebar } from "./sidebar"
 import { Header } from "./header"
 import { Spinner } from "@/components/ui/spinner"
-import { User, usersAPI } from "@/lib/api"
+import { User, usersAPI, brandingAPI } from "@/lib/api"
 import { getMaintenanceStatus } from "@/hooks/use-maintenance"
 
 interface DashboardLayoutProps {
