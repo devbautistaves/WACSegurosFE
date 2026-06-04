@@ -101,10 +101,14 @@ export function DashboardLayout({ children, requiredRole }: DashboardLayoutProps
       try {
         const r = await brandingAPI.getPublic()
         if (r?.branding) {
+          const b: any = r.branding
           localStorage.setItem("branding", JSON.stringify({
-            nombre: r.branding.nombre || "",
-            logo: r.branding.logo || "",
-            colorPrimario: r.branding.colorPrimario || "",
+            nombre: b.nombre || "",
+            logo: b.logo || "",
+            colorPrimario: b.colorPrimario || "",
+            aseguradorasCatalogo: Array.isArray(b.aseguradorasCatalogo) ? b.aseguradorasCatalogo : [],
+            ramosCatalogo: Array.isArray(b.ramosCatalogo) ? b.ramosCatalogo : [],
+            mediosPagoCatalogo: Array.isArray(b.mediosPagoCatalogo) ? b.mediosPagoCatalogo : [],
           }))
           window.dispatchEvent(new Event("branding-updated"))
         }

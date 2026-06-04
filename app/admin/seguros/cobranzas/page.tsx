@@ -30,6 +30,7 @@ import {
   BookOpen, Calendar, User as UserIcon, XCircle, MinusCircle,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useCatalogos } from "@/hooks/use-catalogos"
 
 // ── Helpers de fecha (timezone-safe) ──────────────────────────────────────────
 function localDateStr(): string {
@@ -47,7 +48,8 @@ function fmtFechaCobro(fecha: string | Date | undefined | null): string {
 }
 
 // ── Constants ──────────────────────────────────────────────────────────────────
-const ASEGURADORAS = [
+// Default usado solo como fallback — el real viene de useCatalogos() dentro del componente
+const ASEGURADORAS_DEFAULT = [
   "LA_CAJA", "MERCANTIL_ANDINA", "SAN_CRISTOBAL", "SANCOR", "ALLIANZ",
   "ZURICH", "GALICIA", "LA_PERSEVERANCIA", "ATM", "BERKLEY",
   "RIVADAVIA", "MAPFRE", "NACION", "INTEGRITY", "PROVIDENCIA", "PROF", "OTRA",
@@ -167,6 +169,8 @@ const NOTIF_CONFIG: Record<NotifTipo, { label: string; shortLabel: string; color
 
 // ── Page ───────────────────────────────────────────────────────────────────────
 export default function CobranzasPage() {
+  // Catálogo dinámico de aseguradoras (configurable en /admin/settings/personalizar)
+  const { aseguradoras: ASEGURADORAS } = useCatalogos(ASEGURADORAS_DEFAULT, [])
   // Data
   const [cobranzas, setCobranzas] = useState<CobranzaEfectivo[]>([])
   const [isLoading, setIsLoading] = useState(true)

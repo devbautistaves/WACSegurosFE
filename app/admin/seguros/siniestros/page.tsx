@@ -23,8 +23,10 @@ import { MonthNavigator } from "@/components/ui/month-navigator"
 import { segurosAPI, Siniestro } from "@/lib/api"
 import { AlertTriangle, Plus, Search, Edit2, Trash2, X, Clock, CheckCircle2, XCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useCatalogos } from "@/hooks/use-catalogos"
 
-const ASEGURADORAS = [
+// Default fallback — real viene de useCatalogos() en el componente
+const ASEGURADORAS_DEFAULT = [
   "LA_CAJA", "MERCANTIL_ANDINA", "SAN_CRISTOBAL", "SANCOR", "ALLIANZ",
   "ZURICH", "GALICIA", "LA_PERSEVERANCIA", "ATM", "BERKLEY",
   "RIVADAVIA", "MAPFRE", "NACION", "INTEGRITY", "PROVIDENCIA", "PROF", "OTRA",
@@ -64,6 +66,8 @@ const EMPTY: Partial<Siniestro> = {
 }
 
 export default function SiniestrosPage() {
+  // Catálogo dinámico de aseguradoras (configurable en /admin/settings/personalizar)
+  const { aseguradoras: ASEGURADORAS } = useCatalogos(ASEGURADORAS_DEFAULT, [])
   const [siniestros, setSiniestros] = useState<Siniestro[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [search, setSearch] = useState("")
