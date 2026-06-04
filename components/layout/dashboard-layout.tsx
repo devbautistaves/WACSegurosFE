@@ -93,7 +93,26 @@ export function DashboardLayout({ children, requiredRole }: DashboardLayoutProps
       }
     }
 
+    // Hidratar branding del backend (público, sin token) al cargar la app.
+    // Sin esto, el sidebar lee localStorage.branding que solo existe si el
+    // admin pasó por /admin/settings/personalizar — el resto de los users
+    // veían el fallback hardcoded.
+    const hydrateBranding = async () => {
+      try {
+        const r = await brandingAPI.getPublic()
+        if (r?.branding) {
+          localStorage.setItem("branding", JSON.stringify({
+            nombre: r.branding.nombre || "",
+            logo: r.branding.logo || "",
+            colorPrimario: r.branding.colorPrimario || "",
+          }))
+          window.dispatchEvent(new Event("branding-updated"))
+        }
+      } catch {}
+    }
+
     validateSession()
+    hydrateBranding()
 
     // Listener for logout in other tabs and maintenance mode changes
     const handleStorageChange = (e: StorageEvent) => {
