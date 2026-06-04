@@ -17,6 +17,7 @@ import {
   AlertTriangle,
   Shield,
   Megaphone,
+  Palette,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
@@ -34,6 +35,14 @@ export function Sidebar({ role, userName, onLinkClick }: SidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
 
+  // Branding cacheado en localStorage por la página /admin/settings/personalizar
+  let brandingFromStorage: { nombre?: string; logo?: string; colorPrimario?: string } = {}
+  if (typeof window !== "undefined") {
+    try { const raw = localStorage.getItem("branding"); if (raw) brandingFromStorage = JSON.parse(raw) } catch {}
+  }
+  const brandingLogo = brandingFromStorage.logo || ""
+  const brandingNombre = brandingFromStorage.nombre || ""
+
   const handleLogout = () => {
     localStorage.removeItem("token")
     localStorage.removeItem("user")
@@ -48,6 +57,7 @@ export function Sidebar({ role, userName, onLinkClick }: SidebarProps) {
     { href: "/admin/seguros/siniestros",  label: "Siniestros",     icon: AlertTriangle },
     { href: "/admin/seguros/seguimiento", label: "Seguimiento",    icon: Activity },
     ...(role === "admin" ? [{ href: "/admin/users", label: "Usuarios", icon: Users }] : []),
+    ...(role === "admin" || role === "admin_seguros" ? [{ href: "/admin/settings/personalizar", label: "Personalizar", icon: Palette }] : []),
     { href: "/admin/announcements",       label: "Anuncios",       icon: Megaphone },
     { href: "/admin/notifications",       label: "Notificaciones", icon: Bell },
     ...(role === "admin" ? [{ href: "/admin/chat", label: "Chat", icon: MessageSquare }] : []),
@@ -77,9 +87,15 @@ export function Sidebar({ role, userName, onLinkClick }: SidebarProps) {
         {/* Brand */}
         <div className="flex h-16 items-center justify-between border-b border-white/10 px-4">
           <div className="flex items-center gap-2">
-            <Shield className="h-7 w-7 text-white" />
-            <div>
-              <p className="text-sm font-bold text-white leading-none tracking-wide">WAC SEGUROS</p>
+            {brandingLogo ? (
+              <div className="h-10 w-10 rounded-md bg-white p-1 flex items-center justify-center flex-shrink-0">
+                <img src={brandingLogo} alt={brandingNombre || "WAC SEGUROS"} className="max-h-full max-w-full object-contain" />
+              </div>
+            ) : (
+              <Shield className="h-7 w-7 text-white flex-shrink-0" />
+            )}
+            <div className="min-w-0">
+              <p className="text-sm font-bold text-white leading-none tracking-wide truncate">{brandingNombre || "WAC SEGUROS"}</p>
               <p className="text-[9px] text-blue-300 leading-none tracking-widest uppercase mt-0.5">CRM</p>
             </div>
           </div>

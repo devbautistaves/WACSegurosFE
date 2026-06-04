@@ -2918,3 +2918,34 @@ export const segurosAPI = {
       "/api/seguros/email-masivo", { method: "POST", token, body: JSON.stringify(data) }
     ),
 }
+
+
+// ── Branding (Personalizar) ─────────────────────────────────────────────────
+export interface BrandingSettings {
+  nombre?: string
+  logo?: string
+  colorPrimario?: string
+  whatsapp?: string
+  emailContacto?: string
+  direccion?: string
+  cuit?: string
+  aseguradorasCatalogo?: string[]
+  ramosCatalogo?: string[]
+  mediosPagoCatalogo?: string[]
+}
+
+export const brandingAPI = {
+  get: (token: string) =>
+    fetchAPI<{ success: boolean; branding: BrandingSettings }>("/api/branding", { token }),
+  getPublic: () =>
+    fetchAPI<{ success: boolean; branding: BrandingSettings }>("/api/branding/public"),
+  update: (token: string, data: Partial<BrandingSettings>) =>
+    fetchAPI<{ success: boolean; branding: BrandingSettings }>("/api/branding", {
+      method: "PUT", token, body: JSON.stringify(data),
+    }),
+  uploadLogo: (token: string, base64: string, mime: string) =>
+    fetchAPI<{ success: boolean; logo: string }>("/api/branding/logo", {
+      method: "POST", token, body: JSON.stringify({ base64, mime }),
+    }),
+}
+
