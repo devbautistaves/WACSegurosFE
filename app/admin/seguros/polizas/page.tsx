@@ -289,6 +289,13 @@ function PolizasPageInner() {
     if (!formData.nombreApellido?.trim()) {
       toast({ title: "Error", description: "El nombre del asegurado es requerido", variant: "destructive" }); return
     }
+    const _fFin = (formData as any).fechaFinVig
+    if (!_fFin) {
+      toast({ title: "Falta fecha fin de vigencia", description: "Cargá la fecha de fin de vigencia (obligatoria).", variant: "destructive" }); return
+    }
+    if (formData.fechaInicVig && new Date(String(_fFin)) <= new Date(String(formData.fechaInicVig))) {
+      toast({ title: "Fechas inválidas", description: "La fecha fin debe ser posterior a la fecha inicio de vigencia.", variant: "destructive" }); return
+    }
     setIsSubmitting(true)
     try {
       if (selectedPoliza) {
@@ -306,8 +313,8 @@ function PolizasPageInner() {
       }
       setIsDialogOpen(false)
       fetchPolizas()
-    } catch {
-      toast({ title: "Error", description: "No se pudo guardar la póliza", variant: "destructive" })
+    } catch (e: any) {
+      toast({ title: "Error", description: e?.message || "No se pudo guardar la póliza", variant: "destructive" })
     } finally {
       setIsSubmitting(false)
     }
