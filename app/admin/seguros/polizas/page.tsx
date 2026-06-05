@@ -25,7 +25,7 @@ import { buscarLocalidad, type LocalidadAR } from "@/lib/localidades-ar"
 import {
   Shield, Plus, Search, Filter, Edit2, Trash2, X, CheckCircle2,
   XCircle, Clock, Car, Bike, Home, User, Banknote, ChevronLeft, ChevronRight,
-  Loader2, UserCheck, MapPin,
+  Loader2, UserCheck, MapPin, RefreshCw,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useCatalogos } from "@/hooks/use-catalogos"
@@ -42,7 +42,7 @@ const RAMOS_DEFAULT = [
   "ART", "ACC_PERSONALES", "VIDA", "RESP_CIVIL", "OBJ_ESPECIFICOS",
   "FLOTA_AUTOMOTOR", "OTRO",
 ]
-const ESTADOS = ["VIGENTE", "ANULADA", "PENDIENTE_CLIENTE"]
+const ESTADOS = ["VIGENTE", "A_RENOVAR", "NO_VIGENTE", "ANULADA", "PENDIENTE_CLIENTE"]
 const MEDIOS_PAGO_DEFAULT = ["TARJ_CRED", "CBU", "CUPON", "OTRO"]
 
 const RAMO_LABELS: Record<string, string> = {
@@ -64,9 +64,11 @@ const MEDIO_LABELS: Record<string, string> = {
 
 function estadoBadge(estado: string) {
   switch (estado) {
-    case "VIGENTE": return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-500/15 text-emerald-500"><CheckCircle2 className="h-3 w-3" />Vigente</span>
-    case "ANULADA": return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-500/15 text-red-500"><XCircle className="h-3 w-3" />Anulada</span>
-    default: return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-500/15 text-amber-500"><Clock className="h-3 w-3" />Pend. Cliente</span>
+    case "VIGENTE":    return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-500/15 text-emerald-500"><CheckCircle2 className="h-3 w-3" />Vigente</span>
+    case "A_RENOVAR":  return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-orange-500/15 text-orange-500"><Clock className="h-3 w-3" />A renovar</span>
+    case "NO_VIGENTE": return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-rose-700/15 text-rose-700"><XCircle className="h-3 w-3" />No vigente</span>
+    case "ANULADA":    return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-500/15 text-red-500"><XCircle className="h-3 w-3" />Anulada</span>
+    default:           return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-500/15 text-amber-500"><Clock className="h-3 w-3" />Pend. Cliente</span>
   }
 }
 
@@ -105,7 +107,7 @@ function PolizasPageInner() {
 
   const [polizas, setPolizas] = useState<Poliza[]>([])
   const [total, setTotal] = useState(0)
-  const [globalStats, setGlobalStats] = useState({ vigentes: 0, anuladas: 0, pendientes: 0 })
+  const [globalStats, setGlobalStats] = useState({ vigentes: 0, anuladas: 0, pendientes: 0, aRenovar: 0, noVigentes: 0 })
   const [isLoading, setIsLoading] = useState(true)
   const [page, setPage] = useState(1)
 
@@ -129,6 +131,50 @@ function PolizasPageInner() {
   const [selectedPoliza, setSelectedPoliza] = useState<Poliza | null>(null)
   const [formData, setFormData] = useState<Partial<Poliza>>(EMPTY_FORM)
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+
+  // Renovar dialog
+  const [isRenovarOpen, setIsRenovarOpen] = useState(false)
+  const [renovarForm, setRenovarForm] = useState({ fechaInicVig: "", fechaFinVig: "", numPoliza: "" })
+  const [isRenovando, setIsRenovando] = useState(false)
+
+  const openRenovar = (p: Poliza) => {
+    setSelectedPoliza(p)
+    // Default: inicio = hoy, fin = +12 meses
+    const hoy = new Date()
+    const fin = new Date(); fin.setFullYear(fin.getFullYear() + 1)
+    setRenovarForm({
+      fechaInicVig: hoy.toISOString().slice(0, 10),
+      fechaFinVig: fin.toISOString().slice(0, 10),
+      numPoliza: p.numPoliza || "",
+    })
+    setIsRenovarOpen(true)
+  }
+
+  const submitRenovar = async () => {
+    if (!selectedPoliza) return
+    const token = localStorage.getItem("token")
+    if (!token) return
+    if (!renovarForm.fechaInicVig || !renovarForm.fechaFinVig) {
+      toast({ title: "Faltan fechas", description: "Cargá inicio y fin de vigencia", variant: "destructive" }); return
+    }
+    setIsRenovando(true)
+    try {
+      const r = await fetch(`/api/proxy/seguros/polizas/${selectedPoliza._id}/renovar`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}`, "X-Company-ID": "seguros" },
+        body: JSON.stringify(renovarForm),
+      })
+      const d = await r.json()
+      if (!d.success) throw new Error(d.error || "Error renovando póliza")
+      toast({ title: "Póliza renovada", description: `Vigencia hasta ${new Date(renovarForm.fechaFinVig).toLocaleDateString("es-AR")}` })
+      setIsRenovarOpen(false)
+      setSelectedPoliza(null)
+      fetchPolizas()
+    } catch (e: any) {
+      toast({ title: "Error", description: e.message, variant: "destructive" })
+    } finally { setIsRenovando(false) }
+  }
 
   // Autocomplete de asegurados (solo en creación)
   type AseguradoSug = Awaited<ReturnType<typeof segurosAPI.buscarAsegurados>>["asegurados"][number]
@@ -333,11 +379,13 @@ function PolizasPageInner() {
         </Card>
 
         {/* Stats */}
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
           {[
-            { label: "Vigentes", value: globalStats.vigentes, color: "text-emerald-500", bg: "bg-emerald-500/10", icon: CheckCircle2, filter: "VIGENTE" },
-            { label: "Anuladas", value: globalStats.anuladas, color: "text-red-500", bg: "bg-red-500/10", icon: XCircle, filter: "ANULADA" },
-            { label: "Pend. Cliente", value: globalStats.pendientes, color: "text-amber-500", bg: "bg-amber-500/10", icon: Clock, filter: "PENDIENTE_CLIENTE" },
+            { label: "Vigentes",     value: globalStats.vigentes,   color: "text-emerald-500", bg: "bg-emerald-500/10", icon: CheckCircle2, filter: "VIGENTE" },
+            { label: "A renovar",    value: globalStats.aRenovar,   color: "text-orange-500",  bg: "bg-orange-500/10",  icon: Clock,        filter: "A_RENOVAR" },
+            { label: "No vigentes",  value: globalStats.noVigentes, color: "text-rose-700",    bg: "bg-rose-700/10",    icon: XCircle,      filter: "NO_VIGENTE" },
+            { label: "Anuladas",     value: globalStats.anuladas,   color: "text-red-500",     bg: "bg-red-500/10",     icon: XCircle,      filter: "ANULADA" },
+            { label: "Pend. Cliente",value: globalStats.pendientes, color: "text-amber-500",   bg: "bg-amber-500/10",   icon: Clock,        filter: "PENDIENTE_CLIENTE" },
           ].map((s) => (
             <Card
               key={s.label}
@@ -379,6 +427,8 @@ function PolizasPageInner() {
                 <SelectContent>
                   <SelectItem value="all">Todos los estados</SelectItem>
                   <SelectItem value="VIGENTE">Vigente</SelectItem>
+                  <SelectItem value="A_RENOVAR">A renovar</SelectItem>
+                  <SelectItem value="NO_VIGENTE">No vigente</SelectItem>
                   <SelectItem value="ANULADA">Anulada</SelectItem>
                   <SelectItem value="PENDIENTE_CLIENTE">Pendiente Cliente</SelectItem>
                 </SelectContent>
@@ -474,6 +524,11 @@ function PolizasPageInner() {
                         <td className="py-3 px-3">{estadoBadge(p.estado)}</td>
                         <td className="py-3 px-3">
                           <div className="flex gap-1">
+                            {p.estado !== "ANULADA" && (
+                              <Button variant="ghost" size="icon" onClick={() => openRenovar(p)} title="Renovar póliza">
+                                <RefreshCw className="h-4 w-4 text-orange-500" />
+                              </Button>
+                            )}
                             <Button variant="ghost" size="icon" onClick={() => openEdit(p)}>
                               <Edit2 className="h-4 w-4" />
                             </Button>
@@ -510,6 +565,8 @@ function PolizasPageInner() {
                     <SelectTrigger className="bg-secondary/50"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="VIGENTE">Vigente</SelectItem>
+                      <SelectItem value="A_RENOVAR">A renovar</SelectItem>
+                      <SelectItem value="NO_VIGENTE">No vigente</SelectItem>
                       <SelectItem value="ANULADA">Anulada</SelectItem>
                       <SelectItem value="PENDIENTE_CLIENTE">Pendiente Cliente</SelectItem>
                     </SelectContent>
@@ -576,6 +633,16 @@ function PolizasPageInner() {
                 <Field>
                   <FieldLabel>Fecha Inicio Vigencia</FieldLabel>
                   <Input type="date" value={formData.fechaInicVig ? String(formData.fechaInicVig).substring(0, 10) : ""} onChange={field("fechaInicVig")} className="bg-secondary/50" />
+                </Field>
+                <Field>
+                  <FieldLabel>Fecha Fin Vigencia *</FieldLabel>
+                  <Input
+                    type="date"
+                    required
+                    value={(formData as any).fechaFinVig ? String((formData as any).fechaFinVig).substring(0, 10) : ""}
+                    onChange={field("fechaFinVig")}
+                    className="bg-secondary/50"
+                  />
                 </Field>
               </div>
 
@@ -784,6 +851,46 @@ function PolizasPageInner() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Renovar Dialog */}
+      <Dialog open={isRenovarOpen} onOpenChange={setIsRenovarOpen}>
+        <DialogContent className="sm:max-w-[440px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <RefreshCw className="h-5 w-5 text-orange-500" /> Renovar póliza
+            </DialogTitle>
+            <DialogDescription>
+              {selectedPoliza?.nombreApellido} — {selectedPoliza?.patente || "sin patente"}
+            </DialogDescription>
+          </DialogHeader>
+          <FieldGroup>
+            <Field>
+              <FieldLabel>Nueva fecha inicio *</FieldLabel>
+              <Input type="date" value={renovarForm.fechaInicVig}
+                onChange={e => setRenovarForm(p => ({ ...p, fechaInicVig: e.target.value }))} required />
+            </Field>
+            <Field>
+              <FieldLabel>Nueva fecha fin *</FieldLabel>
+              <Input type="date" value={renovarForm.fechaFinVig}
+                onChange={e => setRenovarForm(p => ({ ...p, fechaFinVig: e.target.value }))} required />
+            </Field>
+            <Field>
+              <FieldLabel>N° de póliza (opcional)</FieldLabel>
+              <Input value={renovarForm.numPoliza}
+                onChange={e => setRenovarForm(p => ({ ...p, numPoliza: e.target.value }))}
+                placeholder="Dejar igual o cargar nuevo" />
+            </Field>
+          </FieldGroup>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsRenovarOpen(false)}>Cancelar</Button>
+            <Button onClick={submitRenovar} disabled={isRenovando}
+              className="bg-orange-500 hover:bg-orange-600 text-white">
+              {isRenovando ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+              Renovar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       </div>
     </DashboardLayout>
   )
