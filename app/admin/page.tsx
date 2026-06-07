@@ -806,6 +806,41 @@ export default function AdminDashboardPage() {
             </Link>
           </div>
 
+
+          {/* Row 1.5: Vigencia automática (cron diario) */}
+          <div className="grid grid-cols-2 gap-4">
+            <Link href="/admin/seguros/polizas?estado=A_RENOVAR">
+              <Card className="border-orange-500/40 bg-orange-500/5 cursor-pointer hover:border-orange-500/70 transition-all">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-lg bg-orange-500/15 flex items-center justify-center shrink-0">
+                      <Clock className="h-5 w-5 text-orange-500" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-orange-500">{(st as any)?.totalARenovar ?? 0}</p>
+                      <p className="text-xs text-muted-foreground">A renovar (≤ 7 días)</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+            <Link href="/admin/seguros/polizas?estado=NO_VIGENTE">
+              <Card className="border-rose-700/40 bg-rose-700/5 cursor-pointer hover:border-rose-700/70 transition-all">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-lg bg-rose-700/15 flex items-center justify-center shrink-0">
+                      <AlertTriangle className="h-5 w-5 text-rose-700" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-rose-700">{(st as any)?.totalNoVigentes ?? 0}</p>
+                      <p className="text-xs text-muted-foreground">No vigentes (vencidas)</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+          </div>
+
           {/* Row 1b: Desglose medio de pago */}
           <div className="grid grid-cols-2 gap-4">
             <Link href="/admin/seguros/cobranzas">
