@@ -116,58 +116,7 @@ async function fetchAPI<T>(endpoint: string, options: FetchOptions = {}): Promis
 
   return data as T
 }
-: Promise<T> {
-  const { token, companyId, ...fetchOptions } = options
 
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    "X-Company-ID": companyId || getStoredCompanyId(),
-  }
-
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`
-  }
-
-  // If using proxy, strip /api prefix since proxy adds it back
-  // endpoint comes as "/api/something", proxy expects "something"
-  let url: string
-  if (API_URL === "/api/proxy") {
-    // Remove leading /api/ from endpoint for proxy
-    const proxyPath = endpoint.replace(/^\/api\//, "")
-    url = `${API_URL}/${proxyPath}`
-  } else {
-    url = `${API_URL}${endpoint}`
-  }
-
-  const response = await fetch(url, {
-    ...fetchOptions,
-    headers,
-  })
-
-  const responseText = await response.text()
-  
-  let data
-  try {
-    data = JSON.parse(responseText)
-  } catch {
-    data = { success: false, message: responseText || "Error de conexion" }
-  }
-
-  if (!response.ok) {
-    // Solo redirigir a login si el token expiro (401), no en 403 (permisos)
-    // El 403 puede ocurrir cuando un rol intenta acceder a endpoints de otro rol
-    if (response.status === 401) {
-      if (typeof window !== "undefined") {
-        localStorage.removeItem("token")
-        localStorage.removeItem("user")
-        window.location.href = "/login"
-      }
-    }
-    throw new Error(data.message || data.error || `Error ${response.status}`)
-  }
-
-  return data as T
-}
 
 // Auth
 export const authAPI = {
