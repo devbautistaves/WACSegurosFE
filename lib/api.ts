@@ -2931,6 +2931,17 @@ export const segurosAPI = {
   syncVencidas: (token: string) =>
     fetchAPI<{ success: boolean; updated: number }>("/api/seguros/cobranzas/sync-vencidas", { method: "POST", token }),
 
+  // Cobranzas elegibles (única fuente de verdad: BE).
+  getCobranzasElegibles: (token: string, mes: string) =>
+    fetchAPI<{
+      success: boolean
+      mes: string
+      proximo: CobranzaEfectivo[]
+      hoy: CobranzaEfectivo[]
+      vencidas: CobranzaEfectivo[]
+      total: number
+    }>(`/api/seguros/cobranzas/elegibles?mes=${encodeURIComponent(mes)}`, { token }),
+
   // Notificaciones por email
   enviarNotificacionBatch: (token: string, tipo: string, mes: string) =>
     fetchAPI<{

@@ -277,27 +277,37 @@ export default function CobranzasPage() {
   })
 
   // ── Notification eligibility ─────────────────────────────────────────────────
-  const todayDay = new Date().getDate()
-  const eligibleProximo = cobranzas.filter(c =>
-    (typeof c.diaVto === "number" && (c.diaVto === todayDay + 1 || c.diaVto === todayDay + 2)) ||
-    getPagoEstado(c) === "PENDIENTE" ||
-    getPagoEstado(c) === "COMPROMISO_PAGO"
-  )
-  const eligibleHoy = cobranzas.filter(c =>
-    typeof c.diaVto === "number" && c.diaVto === todayDay
-  )
-  // "Vencidos sin pago": el cliente no pagó ni el mes seleccionado ni el anterior
-  // (estado distinto a COBRADA / NO_CORRESPONDE / ANULADA en ambos meses).
-  const _prevDate = new Date(currentYear, currentMonth - 1, 1)
-  const mesKeyPrev = `${_prevDate.getFullYear()}-${String(_prevDate.getMonth() + 1).padStart(2, "0")}`
-  const NO_DEBE_FE: EstadoPago[] = ["COBRADA", "NO_CORRESPONDE", "ANULADA"]
-  const debeEnMes = (c: CobranzaEfectivo, mes: string) => {
-    const p = c.pagos.find(x => x.mes === mes)
-    return !p || !NO_DEBE_FE.includes(p.estado)
-  }
-  const eligibleVencidos = cobranzas.filter(c => debeEnMes(c, mesKey) && debeEnMes(c, mesKeyPrev))
+  // Una sola fuente de verdad: el BE. GET /cobranzas/elegibles?mes=YYYY-MM
+  // devuelve { proximo, hoy, vencidas, total } sin solapamiento.
+  const [elegibles, setElegibles] = useState<{
+    proximo: CobranzaEfectivo[]
+    hoy: CobranzaEfectivo[]
+    vencidas: CobranzaEfectivo[]
+    total: number
+  }>({ proximo: [], hoy: [], vencidas: [], total: 0 })
 
-  const totalEligible = eligibleProximo.length + eligibleHoy.length + eligibleVencidos.length
+  useEffect(() => {
+    const token = localStorage.getItem("token")
+    if (!token) return
+    let cancelled = false
+    segurosAPI.getCobranzasElegibles(token, mesKey)
+      .then(r => {
+        if (cancelled) return
+        setElegibles({
+          proximo: r.proximo as CobranzaEfectivo[],
+          hoy: r.hoy as CobranzaEfectivo[],
+          vencidas: r.vencidas as CobranzaEfectivo[],
+          total: r.total,
+        })
+      })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [mesKey, cobranzas.length])
+
+  const eligibleProximo = elegibles.proximo
+  const eligibleHoy = elegibles.hoy
+  const eligibleVencidos = elegibles.vencidas
+  const totalEligible = elegibles.total
 
   const getNotifForMes = (c: CobranzaEfectivo, tipo: NotifTipo): EmailNotificacion | undefined =>
     c.emailNotificaciones?.filter(n => n.tipo === tipo && n.mes === mesKey)
