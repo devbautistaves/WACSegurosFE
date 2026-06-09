@@ -279,6 +279,8 @@ export default function CobranzasPage() {
   // ── Notification eligibility ─────────────────────────────────────────────────
   // Una sola fuente de verdad: el BE. GET /cobranzas/elegibles?mes=YYYY-MM
   // devuelve { proximo, hoy, vencidas, total } sin solapamiento.
+  // todayDay se sigue usando en los textos del modal ("vto. día X").
+  const todayDay = new Date().getDate()
   const [elegibles, setElegibles] = useState<{
     proximo: CobranzaEfectivo[]
     hoy: CobranzaEfectivo[]
