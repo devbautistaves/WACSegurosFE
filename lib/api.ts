@@ -2868,7 +2868,9 @@ export const segurosAPI = {
   updatePoliza: (token: string, id: string, data: Partial<Poliza>) =>
     fetchAPI<{ success: boolean; poliza: Poliza; cobranzaCreada?: boolean }>(`/api/seguros/polizas/${id}`, { method: "PUT", token, body: JSON.stringify(data) }),
   deletePoliza: (token: string, id: string) =>
-    fetchAPI<{ success: boolean }>(`/api/seguros/polizas/${id}`, { method: "DELETE", token }),
+    fetchAPI<{ success: boolean; cobranzasEliminadas?: number }>(`/api/seguros/polizas/${id}`, { method: "DELETE", token }),
+  eliminarPolizas: (token: string, ids: string[]) =>
+    fetchAPI<{ success: boolean; polizasEliminadas: number; cobranzasEliminadas: number }>("/api/seguros/polizas/eliminar-multiple", { method: "POST", token, body: JSON.stringify({ ids }) }),
 
   // Asegurados — autocompletado para nueva póliza
   buscarAsegurados: (token: string, q: string, limit = 10) =>
@@ -2926,6 +2928,8 @@ export const segurosAPI = {
     }),
   deleteCobranza: (token: string, id: string) =>
     fetchAPI<{ success: boolean }>(`/api/seguros/cobranzas/${id}`, { method: "DELETE", token }),
+  eliminarCobranzas: (token: string, ids: string[]) =>
+    fetchAPI<{ success: boolean; cobranzasEliminadas: number }>("/api/seguros/cobranzas/eliminar-multiple", { method: "POST", token, body: JSON.stringify({ ids }) }),
 
   // Sync automático de cuotas vencidas
   syncVencidas: (token: string) =>

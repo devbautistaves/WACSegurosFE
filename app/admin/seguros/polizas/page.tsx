@@ -129,6 +129,27 @@ function PolizasPageInner() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
   const [selectedPoliza, setSelectedPoliza] = useState<Poliza | null>(null)
+
+  // Seleccion multiple para borrado en lote
+  const [seleccion, setSeleccion] = useState<Set<string>>(new Set())
+  const [isBulkDeleteOpen, setIsBulkDeleteOpen] = useState(false)
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false)
+  const toggleSeleccion = (id: string) => setSeleccion(prev => {
+    const next = new Set(prev)
+    next.has(id) ? next.delete(id) : next.add(id)
+    return next
+  })
+  const todasSeleccionadas = polizas.length > 0 && polizas.every(p => seleccion.has(p._id))
+  const toggleTodas = () => setSeleccion(prev => {
+    if (polizas.every(p => prev.has(p._id))) {
+      const next = new Set(prev)
+      polizas.forEach(p => next.delete(p._id))
+      return next
+    }
+    const next = new Set(prev)
+    polizas.forEach(p => next.add(p._id))
+    return next
+  })
   const [formData, setFormData] = useState<Partial<Poliza>>(EMPTY_FORM)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -264,6 +285,7 @@ function PolizasPageInner() {
       }
       const res = await segurosAPI.getPolizas(token, params)
       setPolizas(res.polizas)
+      setSeleccion(new Set())
       setTotal(res.total)
       if (res.stats) setGlobalStats(res.stats)
     } catch {
@@ -324,13 +346,33 @@ function PolizasPageInner() {
     const token = localStorage.getItem("token")
     if (!token || !selectedPoliza) return
     try {
-      await segurosAPI.deletePoliza(token, selectedPoliza._id)
-      toast({ title: "Póliza eliminada" })
+      const r = await segurosAPI.deletePoliza(token, selectedPoliza._id)
+      toast({ title: "Póliza eliminada", description: r.cobranzasEliminadas ? "También se eliminó su cobranza asociada." : undefined })
       setIsDeleteOpen(false)
+      setSelectedPoliza(null)
       fetchPolizas()
-    } catch {
-      toast({ title: "Error", description: "No se pudo eliminar", variant: "destructive" })
+    } catch (e: any) {
+      const msg = (e?.message || "").toLowerCase()
+      if (msg.includes("no encontrada") || msg.includes("not found") || msg.includes("404")) {
+        toast({ title: "La póliza ya no existía", description: "Actualizamos el listado." })
+        setIsDeleteOpen(false); setSelectedPoliza(null); fetchPolizas()
+        return
+      }
+      toast({ title: "Error", description: e?.message || "No se pudo eliminar", variant: "destructive" })
     }
+  }
+
+  const handleBulkDelete = async () => {
+    const token = localStorage.getItem("token")
+    if (!token || seleccion.size === 0) return
+    setIsBulkDeleting(true)
+    try {
+      const r = await segurosAPI.eliminarPolizas(token, Array.from(seleccion))
+      toast({ title: `${r.polizasEliminadas} póliza${r.polizasEliminadas !== 1 ? "s" : ""} eliminada${r.polizasEliminadas !== 1 ? "s" : ""}`, description: r.cobranzasEliminadas ? `Se eliminaron ${r.cobranzasEliminadas} cobranza(s) asociada(s).` : undefined })
+      setSeleccion(new Set()); setIsBulkDeleteOpen(false); fetchPolizas()
+    } catch (e: any) {
+      toast({ title: "Error", description: e?.message || "No se pudieron eliminar", variant: "destructive" })
+    } finally { setIsBulkDeleting(false) }
   }
 
   const field = (key: keyof Poliza) => (e: React.ChangeEvent<HTMLInputElement>) =>
@@ -469,8 +511,16 @@ function PolizasPageInner() {
         {/* Table */}
         <Card className="border-border/50 bg-card/50">
           <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <span>Pólizas ({total})</span>
+            <CardTitle className="flex items-center justify-between gap-3 flex-wrap">
+              <div className="flex items-center gap-3">
+                <span>Pólizas ({total})</span>
+                {seleccion.size > 0 && (
+                  <Button variant="destructive" size="sm" onClick={() => setIsBulkDeleteOpen(true)} className="font-normal">
+                    <Trash2 className="h-4 w-4 mr-1.5" />
+                    Eliminar {seleccion.size} seleccionada{seleccion.size !== 1 ? "s" : ""}
+                  </Button>
+                )}
+              </div>
               {totalPages > 1 && (
                 <div className="flex items-center gap-2 text-sm font-normal">
                   <Button variant="ghost" size="icon" disabled={page === 1} onClick={() => setPage(p => p - 1)}>
@@ -498,6 +548,9 @@ function PolizasPageInner() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-border text-muted-foreground">
+                      <th className="py-3 px-3 w-10">
+                        <input type="checkbox" aria-label="Seleccionar todas" checked={todasSeleccionadas} onChange={toggleTodas} className="h-4 w-4 accent-emerald-600 cursor-pointer align-middle" />
+                      </th>
                       <th className="text-left py-3 px-3 font-medium">Asegurado</th>
                       <th className="text-left py-3 px-3 font-medium">Patente / Riesgo</th>
                       <th className="text-left py-3 px-3 font-medium">Aseguradora</th>
@@ -511,7 +564,10 @@ function PolizasPageInner() {
                   </thead>
                   <tbody>
                     {polizas.map(p => (
-                      <tr key={p._id} className="border-b border-border/50 hover:bg-secondary/30 transition-colors">
+                      <tr key={p._id} className={cn("border-b border-border/50 hover:bg-secondary/30 transition-colors", seleccion.has(p._id) && "bg-emerald-500/5")}>
+                        <td className="py-3 px-3">
+                          <input type="checkbox" aria-label={`Seleccionar ${p.nombreApellido}`} checked={seleccion.has(p._id)} onChange={() => toggleSeleccion(p._id)} className="h-4 w-4 accent-emerald-600 cursor-pointer align-middle" />
+                        </td>
                         <td className="py-3 px-3">
                           <p className="font-medium">{p.nombreApellido}</p>
                           {p.dni && <p className="text-xs text-muted-foreground">DNI: {p.dni}</p>}
@@ -842,6 +898,24 @@ function PolizasPageInner() {
       </Dialog>
 
       {/* Delete Confirmation */}
+      <AlertDialog open={isBulkDeleteOpen} onOpenChange={setIsBulkDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Eliminar {seleccion.size} póliza{seleccion.size !== 1 ? "s" : ""}</AlertDialogTitle>
+            <AlertDialogDescription>
+              Vas a eliminar <strong>{seleccion.size}</strong> póliza{seleccion.size !== 1 ? "s" : ""} y sus cobranzas en efectivo/cupón asociadas. Esta acción no se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isBulkDeleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={(e) => { e.preventDefault(); handleBulkDelete() }} disabled={isBulkDeleting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {isBulkDeleting ? <Loader2 className="h-4 w-4 animate-spin mr-1.5" /> : <Trash2 className="h-4 w-4 mr-1.5" />}
+              Eliminar {seleccion.size}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
