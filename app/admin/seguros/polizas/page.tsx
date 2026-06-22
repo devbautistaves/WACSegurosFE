@@ -244,20 +244,22 @@ function PolizasPageInner() {
   // Autocomplete de Localidad → autocompleta CP. Dataset local (sin requests).
   const [localidadSugs, setLocalidadSugs] = useState<LocalidadAR[]>([])
   const [localidadOpen, setLocalidadOpen] = useState(false)
-  const [localidadFromPick, setLocalidadFromPick] = useState(false)
+  const lastPickedLoc = useRef<string | null>(null)
   const localidadBlurTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
-    if (localidadFromPick) { setLocalidadFromPick(false); return }
     const q = (formData.localidad || "").trim()
+    // Si el valor actual es el que acabamos de elegir, no reabrir el selector.
+    if (lastPickedLoc.current !== null && q === lastPickedLoc.current) return
+    lastPickedLoc.current = null
     if (q.length < 2) { setLocalidadSugs([]); setLocalidadOpen(false); return }
     const results = buscarLocalidad(q, 8)
     setLocalidadSugs(results)
     setLocalidadOpen(results.length > 0)
-  }, [formData.localidad, localidadFromPick])
+  }, [formData.localidad])
 
   const pickLocalidad = (loc: LocalidadAR) => {
-    setLocalidadFromPick(true)
+    lastPickedLoc.current = loc.nombre
     setFormData(prev => ({
       ...prev,
       localidad: loc.nombre,
