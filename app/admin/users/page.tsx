@@ -58,7 +58,7 @@ export default function AdminUsersPage() {
     password: "",
     phone: "",
     location: "",
-    role: "admin_seguros" as "admin" | "admin_seguros",
+    role: "admin" as "admin" | "admin_seguros",
     commissionRate: 0.30,
     supervisorBaseCommission: 750000,
     fixedCommissionPerSale: null as number | null,
@@ -150,7 +150,7 @@ export default function AdminUsersPage() {
         password: "",
         phone: "",
         location: "",
-        role: "admin_seguros" as "admin" | "admin_seguros",
+        role: "admin" as "admin" | "admin_seguros",
         commissionRate: 0.30,
         supervisorBaseCommission: 750000,
         fixedCommissionPerSale: null,
@@ -682,8 +682,7 @@ export default function AdminUsersPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="admin_seguros">Admin Seguros</SelectItem>
-                    <SelectItem value="admin">Admin</SelectItem>
+                                        <SelectItem value="admin">Admin</SelectItem>
                   </SelectContent>
                 </Select>
               </Field>
