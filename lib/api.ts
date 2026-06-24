@@ -2511,6 +2511,40 @@ export const legajoAseguradoAPI = {
     }),
 }
 
+// ── WhatsApp — conexión del número del broker vía el whatsapp-gateway ─────────
+export type WaStatus = "disconnected" | "qr_pending" | "connecting" | "connected" | "expired" | "banned"
+export interface WaState { ok?: boolean; status: WaStatus; phone: string | null; qr: string | null; lastError: string | null }
+export interface WaMessageLog { to: string; body: string; origin: string; templateKey: string | null; status: "sent" | "failed"; error: string | null; createdAt: string }
+export type WaPolizaKey = "polizaProxima" | "polizaVenceHoy" | "polizaVencida"
+export interface WaPolizasConfig {
+  polizaProxima: { enabled: boolean }
+  polizaVenceHoy: { enabled: boolean }
+  polizaVencida: { enabled: boolean }
+  diasProximo: number
+}
+export interface WaVariable { tag: string; desc: string }
+export interface WaPlantilla { tipo: string; configKey: string; label: string; cuando: string; default: string; custom: string; preview: string }
+export const whatsappAPI = {
+  status: (token: string) => fetchAPI<WaState>("/api/whatsapp/status", { token }),
+  qr: (token: string) => fetchAPI<{ ok: boolean; status: WaStatus; qr: string | null }>("/api/whatsapp/qr", { token }),
+  connect: (token: string) => fetchAPI<WaState>("/api/whatsapp/connect", { method: "POST", token }),
+  reconnect: (token: string) => fetchAPI<WaState>("/api/whatsapp/reconnect", { method: "POST", token }),
+  logout: (token: string) => fetchAPI<{ ok: boolean; status: WaStatus }>("/api/whatsapp/logout", { method: "POST", token }),
+  test: (token: string, to: string, text?: string) =>
+    fetchAPI<{ ok: boolean; jid?: string; error?: string }>("/api/whatsapp/test", { method: "POST", token, body: JSON.stringify({ to, text }) }),
+  history: (token: string) => fetchAPI<{ ok: boolean; items: WaMessageLog[] }>("/api/whatsapp/history", { token }),
+  usage: (token: string) => fetchAPI<{ ok: boolean; enviados: number; limite: number; ventanaSeg: number; resetEnSeg: number; totalEnviados?: number }>("/api/whatsapp/usage", { token }),
+  getConfig: (token: string) => fetchAPI<{ ok: boolean; config: WaPolizasConfig }>("/api/whatsapp/config", { token }),
+  setConfig: (token: string, patch: Partial<WaPolizasConfig>) =>
+    fetchAPI<{ ok: boolean; config: WaPolizasConfig }>("/api/whatsapp/config", { method: "PUT", token, body: JSON.stringify(patch) }),
+  getPlantillas: (token: string) =>
+    fetchAPI<{ ok: boolean; variables: WaVariable[]; avisos: WaPlantilla[] }>("/api/whatsapp/plantillas", { token }),
+  setPlantillas: (token: string, patch: Record<string, string>) =>
+    fetchAPI<{ ok: boolean }>("/api/whatsapp/plantillas", { method: "PUT", token, body: JSON.stringify(patch) }),
+  testAviso: (token: string, tipo: string, to: string) =>
+    fetchAPI<{ ok: boolean; error?: string }>("/api/whatsapp/test-aviso", { method: "POST", token, body: JSON.stringify({ tipo, to }) }),
+}
+
 // ── Scoring DNI (Equifax INTREPOR) ────────────────────────────────────────────
 export interface ScoringTokenStatus {
   success: boolean
