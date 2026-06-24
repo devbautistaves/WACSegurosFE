@@ -2387,6 +2387,56 @@ export const polizasAPI = {
       token,
       body: JSON.stringify({ productorId }),
     }),
+
+  // ── Import inteligente Excel/CSV ──────────────────────────────────────
+  importPreview: async (token: string, file: File, mapeo?: Record<string, string | null>) => {
+    const fd = new FormData()
+    fd.append("file", file)
+    if (mapeo) fd.append("mapeo", JSON.stringify(mapeo))
+    const url = `${API_URL}/seguros/import/preview`
+    const r = await fetch(url, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      credentials: "include",
+      body: fd,
+    })
+    const data = await r.json()
+    if (!r.ok || !data.success) throw new Error(data.error || data.message || `Error ${r.status}`)
+    return data as {
+      success: boolean
+      headers: string[]
+      mapeoSugerido: Record<string, string | null>
+      camposDestino: string[]
+      hojas: string[]
+      hojaActiva: string
+      filas: Array<{
+        fila: number
+        raw: Record<string, unknown>
+        normalizada: Record<string, unknown>
+        diagnostico: {
+          ok: boolean
+          warnings: string[]
+          errores: string[]
+          fuzzyHits: Record<string, { sugerido: string; original: string }>
+        }
+      }>
+      stats: { total: number; ok: number; conErrores: number; conWarnings: number }
+    }
+  },
+
+  importConfirmar: (token: string, filas: Array<Record<string, unknown>>, modoDuplicado: "saltar" | "actualizar" = "saltar") =>
+    fetchAPI<{
+      success: boolean
+      creadas: number
+      actualizadas: number
+      saltadas: number
+      cobranzasCreadas: number
+      errores: Array<{ fila: number; error: string }>
+    }>("/api/seguros/import/polizas", {
+      method: "POST",
+      token,
+      body: JSON.stringify({ filas, modoDuplicado }),
+    }),
 }
 
 // ── Scoring DNI (Equifax INTREPOR) ────────────────────────────────────────────

@@ -8,6 +8,13 @@ import { StatusBadge } from "@/components/ui/status-badge"
 import { Spinner } from "@/components/ui/spinner"
 import { Button } from "@/components/ui/button"
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog"
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -41,6 +48,7 @@ import {
   CreditCard,
   FileText,
   Monitor,
+  MessageCircle,
 } from "lucide-react"
 import {
   BarChart,
@@ -115,6 +123,7 @@ export default function AdminDashboardPage() {
   const today = new Date()
   const [segurosYear, setSegurosYear]   = useState(today.getFullYear())
   const [segurosMonth, setSegurosMonth] = useState(today.getMonth()) // 0-indexed
+  const [importOpen, setImportOpen] = useState(false)
 
   useEffect(() => {
     const fetchData = async () => {
@@ -741,6 +750,65 @@ export default function AdminDashboardPage() {
               onChange={(y, m) => { setSegurosYear(y); setSegurosMonth(m) }}
             />
           </div>
+
+          {/* Importá tu cartera — abre en modal */}
+          <div>
+            <Button
+              size="lg"
+              className="gap-2 bg-blue-600 hover:bg-blue-700 shadow-md"
+              onClick={() => setImportOpen(true)}
+            >
+              <FileText className="h-5 w-5" /> Subí tu cartera fácil
+            </Button>
+          </div>
+
+          <Dialog open={importOpen} onOpenChange={setImportOpen}>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-3">
+                  <span className="h-11 w-11 shrink-0 rounded-xl bg-blue-500/15 flex items-center justify-center">
+                    <FileText className="h-6 w-6 text-blue-600" />
+                  </span>
+                  <span className="leading-tight">Importá tu cartera de pólizas</span>
+                </DialogTitle>
+                <DialogDescription>
+                  Cargá todas tus pólizas de una, desde un Excel o CSV.
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="grid sm:grid-cols-3 gap-3 my-2">
+                {[
+                  { n: 1, t: "Descargá la plantilla", d: "Un Excel/CSV con las columnas listas." },
+                  { n: 2, t: "Completala", d: "Pegá tus pólizas en la plantilla." },
+                  { n: 3, t: "Subila acá", d: "Las cargamos todas automáticamente." },
+                ].map(s => (
+                  <div key={s.n} className="rounded-xl border border-blue-500/20 bg-card/60 p-3.5">
+                    <div className="h-7 w-7 rounded-full bg-blue-600 text-white text-sm font-bold flex items-center justify-center mb-2">{s.n}</div>
+                    <p className="font-semibold text-sm text-foreground">{s.t}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{s.d}</p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex flex-wrap gap-2.5">
+                <Link href="/admin/seguros/polizas/importar" onClick={() => setImportOpen(false)}>
+                  <Button className="gap-2 bg-blue-600 hover:bg-blue-700"><FileText className="h-4 w-4" /> Importar pólizas →</Button>
+                </Link>
+                <Button
+                  variant="outline"
+                  className="gap-2 border-emerald-300 text-emerald-700 hover:bg-emerald-50"
+                  onClick={() => {
+                    let quien = ""
+                    try { const u = JSON.parse(localStorage.getItem("user") || "null"); if (u) quien = ` Soy ${u.name || u.email || ""}.` } catch {}
+                    const msg = encodeURIComponent(`Hola, necesito que me suban mi cartera de pólizas a WAC Seguros.${quien} Les paso el archivo por acá.`)
+                    window.open(`https://wa.me/5491135767915?text=${msg}`, "_blank")
+                  }}
+                >
+                  <MessageCircle className="h-4 w-4" /> Que la suba el soporte
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
 
           {/* Row 1: Stats generales */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
