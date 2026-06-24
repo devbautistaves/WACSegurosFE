@@ -25,10 +25,11 @@ import { buscarLocalidad, type LocalidadAR } from "@/lib/localidades-ar"
 import {
   Shield, Plus, Search, Filter, Edit2, Trash2, X, CheckCircle2,
   XCircle, Clock, Car, Bike, Home, User, Banknote, ChevronLeft, ChevronRight,
-  Loader2, UserCheck, MapPin, RefreshCw,
+  Loader2, UserCheck, MapPin, RefreshCw, IdCard,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useCatalogos } from "@/hooks/use-catalogos"
+import { LegajoShareModal } from "@/components/legajo-share-modal"
 
 // Defaults usados como fallback. El catálogo real viene del branding del broker
 // vía useCatalogos() — esto solo aplica si la cuenta nunca configuró nada.
@@ -158,6 +159,8 @@ function PolizasPageInner() {
   const [isRenovarOpen, setIsRenovarOpen] = useState(false)
   const [renovarForm, setRenovarForm] = useState({ fechaInicVig: "", fechaFinVig: "", numPoliza: "" })
   const [isRenovando, setIsRenovando] = useState(false)
+  // Legajo: modal para compartir el legajo digital del cliente (link + QR + WhatsApp).
+  const [legajoDialog, setLegajoDialog] = useState<{ open: boolean; poliza: Poliza | null }>({ open: false, poliza: null })
 
   const openRenovar = (p: Poliza) => {
     setSelectedPoliza(p)
@@ -589,6 +592,14 @@ function PolizasPageInner() {
                         <td className="py-3 px-3">{estadoBadge(p.estado)}</td>
                         <td className="py-3 px-3">
                           <div className="flex gap-1">
+                            <Button
+                              variant="ghost" size="icon"
+                              title="Legajo del cliente (link + QR)"
+                              className="text-violet-600 hover:text-violet-700 hover:bg-violet-500/10"
+                              onClick={(e) => { e.stopPropagation(); setLegajoDialog({ open: true, poliza: p }) }}
+                            >
+                              <IdCard className="h-4 w-4" />
+                            </Button>
                             {p.estado !== "ANULADA" && (
                               <Button variant="ghost" size="icon" onClick={() => openRenovar(p)} title="Renovar póliza">
                                 <RefreshCw className="h-4 w-4 text-orange-500" />
@@ -974,6 +985,15 @@ function PolizasPageInner() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Compartir legajo digital del cliente (link + QR + WhatsApp) */}
+      <LegajoShareModal
+        open={legajoDialog.open}
+        onClose={() => setLegajoDialog({ open: false, poliza: null })}
+        nombreApellido={legajoDialog.poliza?.nombreApellido || ""}
+        email={legajoDialog.poliza?.email}
+        whatsapp={legajoDialog.poliza?.celular}
+      />
       </div>
     </DashboardLayout>
   )

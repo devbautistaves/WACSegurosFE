@@ -2439,6 +2439,78 @@ export const polizasAPI = {
     }),
 }
 
+// ── Legajo público del asegurado + comprobantes ──────────────────────────────
+export interface DatosCobro {
+  alias?: string; cbu?: string; titular?: string; banco?: string; linkPago?: string; nota?: string
+}
+export interface LegajoVehiculo {
+  _id: string; patente?: string; ramo?: string; aseguradora?: string
+  tipoCobertura?: string; datosRiesgo?: string; chasis?: string; motor?: string; gnc?: boolean
+  numPoliza?: string; fechaInicVig?: string; fechaFinVig?: string; estado?: string
+}
+export interface LegajoPago {
+  mes: string; mesLabel?: string
+  estado: "PENDIENTE" | "COBRADA" | "CUOTA_VENCIDA" | "CUPON_ENVIADO" | "COMPROMISO_PAGO" | "NO_CORRESPONDE" | "ANULADA" | "COMPROBANTE_RECIBIDO"
+  numeroCuota?: number; monto?: number | null; fechaCobro?: string | null
+  comprobante: { subidoEn?: string | null; confirmadoEn?: string | null; rechazadoEn?: string | null; rechazoMotivo?: string } | null
+}
+export interface LegajoCobranza {
+  _id: string; polizaId: string
+  aseguradora?: string; patente?: string; ramo?: string
+  diaVto?: number; numeroCuotasTotal?: number
+  pagos: LegajoPago[]
+}
+export interface CompaniaConfig {
+  nombre: string; telefonoAuxilio?: string; telefonoSiniestros?: string
+  appUrl?: string; sitioWeb?: string; notasDelPAS?: string; color?: string; logo?: string
+}
+export interface LegajoSiniestro {
+  _id: string; polizaId?: string; numPoliza?: string
+  bienAsegurado?: string; fechaOcurrencia?: string; tipoSiniestro?: string
+  compania?: string; estado?: string; numeroSiniestro?: string
+  denunciaAdministrativa?: "REALIZADA" | "PENDIENTE"
+}
+export interface LegajoPublico {
+  productor: { nombre: string; logo?: string; colorPrimario?: string; whatsapp?: string; telefono?: string; email?: string; datosCobro?: DatosCobro | null }
+  cliente: { nombreApellido: string; dni?: string; email?: string; telefono?: string }
+  vehiculos: LegajoVehiculo[]
+  cuentaCorriente: LegajoCobranza[]
+  siniestros: LegajoSiniestro[]
+  companias: CompaniaConfig[]
+}
+
+export const legajoAseguradoAPI = {
+  publico: (qrToken: string) =>
+    fetchAPI<LegajoPublico>(`/api/asegurado-publico/legajo/${qrToken}`),
+  subirComprobante: (qrToken: string, body: { cobranzaId: string; mes: string; dataUrl: string }) =>
+    fetchAPI<{ success: boolean }>(`/api/asegurado-publico/legajo/${qrToken}/comprobante`, {
+      method: "POST", body: JSON.stringify(body),
+    }),
+  linkPorDatos: (token: string, q: { dni?: string; email?: string; nombreApellido?: string }) => {
+    const p = new URLSearchParams()
+    if (q.dni) p.set("dni", q.dni)
+    if (q.email) p.set("email", q.email)
+    if (q.nombreApellido) p.set("nombreApellido", q.nombreApellido)
+    return fetchAPI<{ success: boolean; qrToken: string; url: string }>(`/api/seguros/asegurados/legajo-link?${p.toString()}`, { token })
+  },
+  comprobantesPendientes: (token: string) =>
+    fetchAPI<{ success: boolean; items: Array<{
+      cobranzaId: string; nombreApellido: string; aseguradora?: string; patente?: string; ramo?: string
+      mes: string; mesLabel?: string; monto?: number | null; subidoEn?: string; tieneImagen: boolean
+    }> }>(`/api/seguros/comprobantes-pendientes`, { token }),
+  getComprobante: (token: string, cobranzaId: string, mes: string) =>
+    fetchAPI<{ success: boolean; comprobante: { dataUrl: string; subidoEn?: string; confirmadoEn?: string; rechazadoEn?: string } }>(
+      `/api/seguros/cobranzas/${cobranzaId}/comprobante/${encodeURIComponent(mes)}`, { token }),
+  confirmarComprobante: (token: string, cobranzaId: string, body: { mes: string; monto?: number }) =>
+    fetchAPI<{ success: boolean }>(`/api/seguros/cobranzas/${cobranzaId}/comprobante/confirmar`, {
+      method: "POST", body: JSON.stringify(body), token,
+    }),
+  rechazarComprobante: (token: string, cobranzaId: string, body: { mes: string; motivo?: string }) =>
+    fetchAPI<{ success: boolean }>(`/api/seguros/cobranzas/${cobranzaId}/comprobante/rechazar`, {
+      method: "POST", body: JSON.stringify(body), token,
+    }),
+}
+
 // ── Scoring DNI (Equifax INTREPOR) ────────────────────────────────────────────
 export interface ScoringTokenStatus {
   success: boolean
