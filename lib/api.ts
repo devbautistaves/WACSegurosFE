@@ -2447,6 +2447,7 @@ export interface LegajoVehiculo {
   _id: string; patente?: string; ramo?: string; aseguradora?: string
   tipoCobertura?: string; datosRiesgo?: string; chasis?: string; motor?: string; gnc?: boolean
   numPoliza?: string; fechaInicVig?: string; fechaFinVig?: string; estado?: string
+  medioDePago?: string; domicilio?: string; localidad?: string
 }
 export interface LegajoPago {
   mes: string; mesLabel?: string
