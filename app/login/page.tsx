@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -174,6 +175,12 @@ export default function LoginPage() {
                   "Ingresar"
                 )}
               </Button>
+
+              <div className="text-center">
+                <Link href="/recuperar" className="text-sm text-slate-500 hover:text-blue-700 transition-colors">
+                  ¿Olvidaste tu contraseña?
+                </Link>
+              </div>
             </form>
 
             <div className="mt-6 pt-5 border-t border-slate-200 text-center">

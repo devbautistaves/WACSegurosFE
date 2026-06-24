@@ -131,6 +131,21 @@ export const authAPI = {
       method: "POST",
       body: JSON.stringify(data),
     }),
+
+  forgotPassword: (email: string) =>
+    fetchAPI<{ success: boolean; message: string }>("/api/auth/forgot-password", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    }),
+
+  resetPassword: (token: string, password: string) =>
+    fetchAPI<{ success: boolean; message: string }>("/api/auth/reset-password", {
+      method: "POST",
+      body: JSON.stringify({ token, password }),
+    }),
+
+  me: (token: string) =>
+    fetchAPI<{ success: boolean; user: User }>("/api/auth/me", { token }),
 }
 
 // Users
