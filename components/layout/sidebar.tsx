@@ -21,6 +21,7 @@ import {
   Megaphone,
   Palette,
   MessageCircle,
+  Calculator,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
@@ -66,6 +67,7 @@ export function Sidebar({ role, userName, onLinkClick }: SidebarProps) {
     { href: "/admin/seguros/polizas",     label: "Pólizas",        icon: FileText },
     { href: "/admin/seguros/cobranzas",   label: "Cobranzas",      icon: CreditCard },
     { href: "/admin/seguros/siniestros",  label: "Siniestros",     icon: AlertTriangle },
+    { href: "/admin/multicotizador", label: "Multicotizador", icon: Calculator },
     { href: "/admin/seguros/seguimiento", label: "Seguimiento",    icon: Activity },
     ...(role === "admin" || role === "admin_seguros" ? [{ href: "/admin/whatsapp", label: "WhatsApp", icon: MessageCircle }] : []),
     ...(role === "admin" ? [{ href: "/admin/users", label: "Usuarios", icon: Users }] : []),

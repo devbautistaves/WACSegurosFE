@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import { DashboardLayout } from "@/components/layout/dashboard-layout"
 import { brandingAPI, BrandingSettings } from "@/lib/api"
-import { Loader2, Plus, X, Save, Tag, Building2, CreditCard, Upload, Palette, ImageIcon } from "lucide-react"
+import { Loader2, Plus, X, Save, Tag, Building2, CreditCard, Upload, Palette, ImageIcon, Search } from "lucide-react"
 
 function Chip({ label, onRemove }: { label: string; onRemove: () => void }) {
   return (
@@ -16,11 +16,16 @@ function Chip({ label, onRemove }: { label: string; onRemove: () => void }) {
 
 function TagInput({ items, onChange, placeholder }: { items: string[]; onChange: (v: string[]) => void; placeholder: string }) {
   const [val, setVal] = useState("")
+  const [q, setQ] = useState("")
   const add = () => {
     const v = val.trim().toUpperCase().replace(/\s+/g, "_")
     if (!v || items.includes(v)) { setVal(""); return }
     onChange([...items, v]); setVal("")
   }
+  // Orden alfabetico + filtro de busqueda.
+  const sorted = [...items].sort((a, b) => a.localeCompare(b, "es"))
+  const ql = q.trim().toUpperCase()
+  const shown = ql ? sorted.filter(i => i.includes(ql)) : sorted
   return (
     <>
       <div className="flex gap-2">
@@ -35,9 +40,17 @@ function TagInput({ items, onChange, placeholder }: { items: string[]; onChange:
           <Plus className="h-4 w-4" /> Agregar
         </button>
       </div>
+      {items.length > 6 && (
+        <div className="relative mt-2">
+          <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+          <input value={q} onChange={e => setQ(e.target.value)} placeholder={`Buscar en ${items.length}…`}
+            className="w-full h-8 rounded-md border pl-8 pr-3 text-[13px] outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-200" />
+        </div>
+      )}
       <div className="flex flex-wrap gap-1.5 mt-2 min-h-[28px]">
-        {items.map(i => <Chip key={i} label={i} onRemove={() => onChange(items.filter(x => x !== i))} />)}
+        {shown.map(i => <Chip key={i} label={i} onRemove={() => onChange(items.filter(x => x !== i))} />)}
         {items.length === 0 && <p className="text-xs text-muted-foreground">Sin ítems cargados.</p>}
+        {items.length > 0 && shown.length === 0 && <p className="text-xs text-muted-foreground italic">Sin resultados para “{q}”.</p>}
       </div>
     </>
   )
