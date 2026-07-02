@@ -55,6 +55,7 @@ export default function WhatsAppPage() {
   const [usage, setUsage] = useState<{ enviados: number; limite: number } | null>(null)
   const [config, setConfig] = useState<WaPolizasConfig | null>(null)
   const [savingKey, setSavingKey] = useState<WaPolizaKey | null>(null)
+  const [savingHorario, setSavingHorario] = useState(false)
 
   // Plantillas editables de los avisos.
   const [plantillas, setPlantillas] = useState<WaPlantilla[]>([])
@@ -107,6 +108,16 @@ export default function WhatsAppPage() {
     try { const r = await whatsappAPI.setConfig(token, { [key]: { enabled } } as any); if (r.ok) setConfig(r.config) }
     catch { setConfig({ ...config, [key]: { enabled: !enabled } }) }
     finally { setSavingKey(null) }
+  }
+
+  const guardarHorario = async (desde: number, hasta: number) => {
+    if (!token || !config) return
+    const prev = (config as any).horarioEnvios
+    setConfig({ ...config, horarioEnvios: { desde, hasta } } as any)
+    setSavingHorario(true)
+    try { const r = await whatsappAPI.setConfig(token, { horarioEnvios: { desde, hasta } } as any); if (r.ok) setConfig(r.config) }
+    catch { setConfig({ ...config, horarioEnvios: prev } as any) }
+    finally { setSavingHorario(false) }
   }
 
   const refresh = useCallback(async (tk: string) => {
@@ -298,6 +309,25 @@ export default function WhatsAppPage() {
                     </button>
                   )}
                 </div>
+              </div>
+            </div>
+
+            {/* Horario de mensajes automáticos */}
+            <div className="rounded-2xl border bg-white shadow-sm mt-5 px-5 py-5">
+              <div className="flex items-center gap-2 mb-1"><AlarmClock className="h-4 w-4 text-slate-400" /><h2 className="font-bold text-lg" style={{ color: INK }}>Horario de mensajes automáticos</h2></div>
+              <p className="text-sm text-slate-500 mb-3">Tus clientes solo reciben avisos automáticos por WhatsApp dentro de esta franja. Fuera de ese horario el aviso espera y se manda cuando abre.</p>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-sm text-slate-600">Enviar entre las</span>
+                <select value={(config as any)?.horarioEnvios?.desde ?? 9} onChange={(e) => guardarHorario(Number(e.target.value), (config as any)?.horarioEnvios?.hasta ?? 21)} disabled={savingHorario}
+                  className="px-2.5 py-1.5 rounded-lg border text-sm outline-none focus:ring-2" style={{ ["--tw-ring-color" as any]: ACCENT }}>
+                  {Array.from({ length: 24 }, (_, i) => i).map((h) => <option key={h} value={h}>{String(h).padStart(2, "0")}:00</option>)}
+                </select>
+                <span className="text-sm text-slate-600">y las</span>
+                <select value={(config as any)?.horarioEnvios?.hasta ?? 21} onChange={(e) => guardarHorario((config as any)?.horarioEnvios?.desde ?? 9, Number(e.target.value))} disabled={savingHorario}
+                  className="px-2.5 py-1.5 rounded-lg border text-sm outline-none focus:ring-2" style={{ ["--tw-ring-color" as any]: ACCENT }}>
+                  {Array.from({ length: 24 }, (_, i) => i + 1).map((h) => <option key={h} value={h}>{String(h).padStart(2, "0")}:00</option>)}
+                </select>
+                {savingHorario && <Loader2 className="h-4 w-4 animate-spin text-slate-400" />}
               </div>
             </div>
 
