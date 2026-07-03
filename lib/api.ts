@@ -2523,6 +2523,7 @@ export interface WaPolizasConfig {
   polizaVencida: { enabled: boolean }
   diasProximo: number
   horarioEnvios?: { desde: number; hasta: number }
+  resumenMultiPoliza?: { enabled: boolean }
 }
 export interface WaVariable { tag: string; desc: string }
 export interface WaPlantilla { tipo: string; configKey: string; label: string; cuando: string; default: string; custom: string; preview: string }
@@ -2545,6 +2546,8 @@ export const whatsappAPI = {
     fetchAPI<{ ok: boolean }>("/api/whatsapp/plantillas", { method: "PUT", token, body: JSON.stringify(patch) }),
   testAviso: (token: string, tipo: string, to: string) =>
     fetchAPI<{ ok: boolean; error?: string }>("/api/whatsapp/test-aviso", { method: "POST", token, body: JSON.stringify({ tipo, to }) }),
+  testResumen: (token: string, to: string) =>
+    fetchAPI<{ ok: boolean; error?: string }>("/api/whatsapp/test-resumen", { method: "POST", token, body: JSON.stringify({ to }) }),
 }
 
 // ── Scoring DNI (Equifax INTREPOR) ────────────────────────────────────────────

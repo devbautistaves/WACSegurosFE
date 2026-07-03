@@ -56,6 +56,8 @@ export default function WhatsAppPage() {
   const [config, setConfig] = useState<WaPolizasConfig | null>(null)
   const [savingKey, setSavingKey] = useState<WaPolizaKey | null>(null)
   const [savingHorario, setSavingHorario] = useState(false)
+  const [savingResumen, setSavingResumen] = useState(false)
+  const [resumenMsg, setResumenMsg] = useState<{ ok: boolean; msg: string } | null>(null)
 
   // Plantillas editables de los avisos.
   const [plantillas, setPlantillas] = useState<WaPlantilla[]>([])
@@ -118,6 +120,28 @@ export default function WhatsAppPage() {
     try { const r = await whatsappAPI.setConfig(token, { horarioEnvios: { desde, hasta } } as any); if (r.ok) setConfig(r.config) }
     catch { setConfig({ ...config, horarioEnvios: prev } as any) }
     finally { setSavingHorario(false) }
+  }
+
+  const guardarResumen = async (enabled: boolean) => {
+    if (!token || !config) return
+    const prev = config
+    setConfig({ ...config, resumenMultiPoliza: { enabled } } as any)
+    setSavingResumen(true)
+    try { const r = await whatsappAPI.setConfig(token, { resumenMultiPoliza: { enabled } } as any); if (r.ok) setConfig(r.config) }
+    catch { setConfig(prev) }
+    finally { setSavingResumen(false) }
+  }
+  const probarResumen = async () => {
+    const num = to.trim()
+    if (!num) { setResumenMsg({ ok: false, msg: "Cargá un número para probar." }); return }
+    setSavingResumen(true); setResumenMsg(null)
+    try {
+      const r = await whatsappAPI.testResumen(token, num)
+      if (r.ok) setResumenMsg({ ok: true, msg: "¡Resumen de prueba enviado! Revisá ese WhatsApp." })
+      else setResumenMsg({ ok: false, msg: errLabel(r.error) })
+      await loadHistory(token)
+    } catch (e: any) { setResumenMsg({ ok: false, msg: e?.message || "No se pudo enviar." }) }
+    finally { setSavingResumen(false) }
   }
 
   const refresh = useCallback(async (tk: string) => {
@@ -191,6 +215,7 @@ export default function WhatsAppPage() {
   const st = ESTADOS[status] || ESTADOS.disconnected
   const tone = toneStyle(st.tone)
   const isConnected = status === "connected"
+  const resumenOn = (config as any)?.resumenMultiPoliza?.enabled !== false
 
   return (
     <DashboardLayout>
@@ -329,6 +354,42 @@ export default function WhatsAppPage() {
                 </select>
                 {savingHorario && <Loader2 className="h-4 w-4 animate-spin text-slate-400" />}
               </div>
+            </div>
+
+            {/* Resumen para clientes con varias pólizas */}
+            <div className="rounded-2xl border bg-white shadow-sm mt-5 px-5 py-5">
+              <div className="flex items-start justify-between gap-3 mb-1">
+                <div className="flex items-center gap-2"><MessageCircle className="h-4 w-4 text-slate-400" /><h2 className="font-bold text-lg" style={{ color: INK }}>Resumen para clientes con varias pólizas</h2></div>
+                <button onClick={() => !savingResumen && guardarResumen(!resumenOn)} disabled={savingResumen} aria-label="Resumen de varias pólizas"
+                  className="relative h-6 w-11 rounded-full flex-shrink-0 transition-colors mt-0.5" style={{ background: resumenOn ? ACCENT : "#cbd5e1" }}>
+                  <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${resumenOn ? "left-[22px]" : "left-0.5"}`} />
+                </button>
+              </div>
+              <p className="text-sm text-slate-500 mb-3">Cuando un cliente tiene <strong>varias pólizas</strong>, en vez de un WhatsApp por cada una recibe <strong>un solo mensaje</strong> con el resumen de todos sus vencimientos. Así no lo saturás y cuenta como un envío. {resumenOn ? "Está activo." : "Está desactivado: se manda un mensaje por póliza."}</p>
+              <p className="text-xs font-semibold text-slate-400 mb-1.5">Así lo recibe el cliente:</p>
+              <div className="rounded-lg p-2.5 text-[13px] text-slate-700 whitespace-pre-wrap" style={{ background: "#e7f7ee", border: "1px solid rgba(14,159,110,.18)" }}>
+{`Hola Juan 👋
+Te recordamos el vencimiento de tus pólizas:
+
+• Auto (AB123CD): vence el 25/06/2026
+• Hogar: vence el 28/06/2026
+• Vida: venció el 20/06/2026, hay que renovar
+
+Escribinos para renovar o consultar ✅`}
+              </div>
+              <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center mt-3">
+                <input value={to} onChange={(e) => setTo(e.target.value)} disabled={!isConnected} placeholder="Ej: 11 2345 6789"
+                  className="flex-1 px-3 py-2 rounded-lg border text-sm disabled:bg-slate-50 disabled:text-slate-400 outline-none focus:ring-2" style={{ ["--tw-ring-color" as any]: ACCENT }} />
+                <button onClick={probarResumen} disabled={!isConnected || savingResumen || !to.trim() || trial.bloqueado} className="inline-flex items-center justify-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-lg text-white disabled:opacity-50 whitespace-nowrap" style={{ background: ACCENT }}>
+                  {savingResumen ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />} Enviar resumen de prueba
+                </button>
+              </div>
+              {resumenMsg && (
+                <div className={`text-xs flex items-center gap-1 mt-2 ${resumenMsg.ok ? "text-emerald-700" : "text-red-600"}`}>
+                  {resumenMsg.ok ? <CheckCircle2 className="h-3.5 w-3.5" /> : <XCircle className="h-3.5 w-3.5" />} {resumenMsg.msg}
+                </div>
+              )}
+              {!isConnected && <p className="text-[11px] text-slate-400 mt-1">Conectá WhatsApp primero para poder probar.</p>}
             </div>
 
             {/* Avisos de póliza automáticos — con plantilla editable y prueba */}
