@@ -38,6 +38,13 @@ const toneStyle = (tone: string) =>
   tone === "bad"  ? { bg: "rgba(192,73,47,.12)",  fg: "#C0492F" } :
                     { bg: "rgba(15,23,42,.06)",   fg: "#5B6B63" }
 
+// Plantillas por defecto de los resúmenes (deben coincidir con el BE). La lista
+// de pólizas/cuotas ({{lista}}) la arma el sistema; acá va un ejemplo para la preview.
+const DEF_RES_POL = "Hola {{cliente}} 👋\nTe recordamos el vencimiento de tus pólizas en {{negocio}}:\n\n{{lista}}\n\nEscribinos para renovar o consultar ✅"
+const DEF_RES_CUO = "Hola {{cliente}} 👋\nTe recordamos tus cuotas en {{negocio}}:\n\n{{lista}}\n\nCualquier duda, escribinos ✅"
+const SAMPLE_LISTA_POL = "• Auto (AB123CD): vence el 25/06/2026\n• Hogar: vence el 28/06/2026\n• Vida: venció el 20/06/2026, hay que renovar"
+const SAMPLE_LISTA_CUO = "• Auto (AB123CD): cuota N° 3 $45.000 — vence el 25/06/2026\n• Hogar: cuota N° 5 $20.000 — vence el 28/06/2026"
+
 export default function WhatsAppPage() {
   const [token, setToken] = useState("")
   const [status, setStatus] = useState<WaStatus>("disconnected")
@@ -58,6 +65,11 @@ export default function WhatsAppPage() {
   const [savingHorario, setSavingHorario] = useState(false)
   const [savingResumen, setSavingResumen] = useState(false)
   const [resumenMsg, setResumenMsg] = useState<{ ok: boolean; msg: string } | null>(null)
+  // Textos editables de los dos resúmenes (pólizas / cuotas).
+  const [resPol, setResPol] = useState(DEF_RES_POL)
+  const [resCuo, setResCuo] = useState(DEF_RES_CUO)
+  const [savingResTpl, setSavingResTpl] = useState<string | null>(null)
+  const [resTplMsg, setResTplMsg] = useState<{ key: string; ok: boolean; msg: string } | null>(null)
 
   // Plantillas editables de los avisos.
   const [plantillas, setPlantillas] = useState<WaPlantilla[]>([])
@@ -86,6 +98,19 @@ export default function WhatsAppPage() {
       setTplMsg({ key: configKey, ok: true, msg: "Plantilla guardada." })
     } catch (e: any) { setTplMsg({ key: configKey, ok: false, msg: e?.message || "No se pudo guardar." }) }
     finally { setSavingTpl(null) }
+  }
+
+  // Preview del resumen: {{cliente}}/{{negocio}} con ejemplo y {{lista}} = lista de muestra.
+  const previewResumen = (texto: string, lista: string) =>
+    String(texto || "").replace(/\{\{\s*(\w+)\s*\}\}/g, (_, k) => k === "lista" ? lista : (SAMPLE[k] != null ? SAMPLE[k] : ""))
+
+  const guardarResumenTpl = async (key: "resumenPolizas" | "resumenCuotas", texto: string) => {
+    setSavingResTpl(key); setResTplMsg(null)
+    try {
+      await whatsappAPI.setPlantillas(token, { [key]: texto } as any)
+      setResTplMsg({ key, ok: true, msg: "Mensaje guardado." })
+    } catch (e: any) { setResTplMsg({ key, ok: false, msg: e?.message || "No se pudo guardar." }) }
+    finally { setSavingResTpl(null) }
   }
   const restaurarPlantilla = (a: WaPlantilla) => { setEdits(ed => ({ ...ed, [a.configKey]: a.default })) }
   const probarAviso = async (a: WaPlantilla) => {
@@ -159,7 +184,12 @@ export default function WhatsAppPage() {
       ])
       if (h.ok) setHistory(h.items || [])
       if (u.ok) setUsage({ enviados: u.enviados, limite: u.limite })
-      if (c.ok) setConfig(c.config)
+      if (c.ok) {
+        setConfig(c.config)
+        const pl = (c.config as any)?.plantillas || {}
+        setResPol(pl.resumenPolizas || DEF_RES_POL)
+        setResCuo(pl.resumenCuotas || DEF_RES_CUO)
+      }
       if (p.ok) {
         setPlantillas(p.avisos); setVariables(p.variables)
         const ed: Record<string, string> = {}
@@ -366,16 +396,41 @@ export default function WhatsAppPage() {
                 </button>
               </div>
               <p className="text-sm text-slate-500 mb-3">Cuando un cliente tiene <strong>varias pólizas</strong>, en vez de un WhatsApp por cada una recibe <strong>un solo mensaje</strong> con el resumen de todos sus vencimientos. Así no lo saturás y cuenta como un envío. {resumenOn ? "Está activo." : "Está desactivado: se manda un mensaje por póliza."}</p>
-              <p className="text-xs font-semibold text-slate-400 mb-1.5">Así lo recibe el cliente:</p>
-              <div className="rounded-lg p-2.5 text-[13px] text-slate-700 whitespace-pre-wrap" style={{ background: "#e7f7ee", border: "1px solid rgba(14,159,110,.18)" }}>
-{`Hola Juan Pérez 👋
-Te recordamos el vencimiento de tus pólizas:
-
-• Auto (AB123CD): vence el 25/06/2026
-• Hogar: vence el 28/06/2026
-• Vida: venció el 20/06/2026, hay que renovar
-
-Escribinos para renovar o consultar ✅`}
+              {/* Mensajes editables del resumen (pólizas + cuotas) */}
+              <div className="space-y-4">
+                {[
+                  { key: "resumenPolizas" as const, titulo: "Resumen de vencimiento de pólizas", texto: resPol, set: setResPol, def: DEF_RES_POL, lista: SAMPLE_LISTA_POL, etiqueta: "pólizas" },
+                  { key: "resumenCuotas" as const, titulo: "Resumen de cuotas", texto: resCuo, set: setResCuo, def: DEF_RES_CUO, lista: SAMPLE_LISTA_CUO, etiqueta: "cuotas" },
+                ].map((r) => (
+                  <div key={r.key} className="rounded-xl border p-3" style={{ borderColor: "#e2e8f0" }}>
+                    <p className="text-xs font-semibold text-slate-500 mb-1.5">{r.titulo}</p>
+                    <textarea value={r.texto} onChange={(e) => r.set(e.target.value)} rows={5}
+                      className="w-full px-3 py-2 rounded-lg border text-sm outline-none focus:ring-2 resize-y" style={{ ["--tw-ring-color" as any]: ACCENT }} />
+                    <div className="flex flex-wrap gap-1.5 mt-2 items-center">
+                      <span className="text-[11px] text-slate-400 mr-1">Insertá:</span>
+                      {["{{cliente}}", "{{negocio}}", "{{lista}}"].map((v) => (
+                        <button key={v} type="button" onClick={() => r.set(r.texto + " " + v)} className="text-[11px] px-2 py-0.5 rounded-md border text-slate-600 hover:bg-slate-50">{v}</button>
+                      ))}
+                      <span className="text-[11px] text-slate-400">· {"{{lista}}"} = la lista de {r.etiqueta} (la arma el sistema)</span>
+                    </div>
+                    <p className="text-[11px] font-semibold text-slate-400 mt-3 mb-1">Así lo recibe el cliente:</p>
+                    <div className="rounded-lg p-2.5 text-[13px] text-slate-700 whitespace-pre-wrap" style={{ background: "#e7f7ee", border: "1px solid rgba(14,159,110,.18)" }}>
+                      {previewResumen(r.texto, r.lista)}
+                    </div>
+                    <div className="flex flex-wrap gap-2 mt-2 items-center">
+                      <button type="button" onClick={() => guardarResumenTpl(r.key, r.texto)} disabled={savingResTpl === r.key}
+                        className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg text-white disabled:opacity-50" style={{ background: INK }}>
+                        {savingResTpl === r.key ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />} Guardar
+                      </button>
+                      <button type="button" onClick={() => r.set(r.def)} className="text-xs font-semibold text-slate-600 px-2.5 py-1.5 rounded-lg border hover:bg-slate-50">Restaurar por defecto</button>
+                      {resTplMsg && resTplMsg.key === r.key && (
+                        <span className={`text-xs flex items-center gap-1 ${resTplMsg.ok ? "text-emerald-700" : "text-red-600"}`}>
+                          {resTplMsg.ok ? <CheckCircle2 className="h-3.5 w-3.5" /> : <XCircle className="h-3.5 w-3.5" />} {resTplMsg.msg}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
               </div>
               <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center mt-3">
                 <input value={to} onChange={(e) => setTo(e.target.value)} disabled={!isConnected} placeholder="Ej: 11 2345 6789"
