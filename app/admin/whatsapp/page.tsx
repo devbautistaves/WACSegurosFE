@@ -74,7 +74,7 @@ export default function WhatsAppPage() {
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   // Render local del preview con datos de ejemplo (mismo SAMPLE que el BE).
-  const SAMPLE: Record<string, string> = { cliente: "Juan", negocio: "Tu Broker", cobertura: "Auto (AB123CD)", fecha: "25/06/2026" }
+  const SAMPLE: Record<string, string> = { cliente: "Juan Pérez", negocio: "Tu Broker", cobertura: "Auto (AB123CD)", fecha: "25/06/2026" }
   const previewDe = (texto: string) =>
     String(texto || "").replace(/\{\{\s*(\w+)\s*\}\}/g, (_, k) => SAMPLE[k] != null ? SAMPLE[k] : "")
 
