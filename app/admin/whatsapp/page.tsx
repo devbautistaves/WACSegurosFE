@@ -368,7 +368,7 @@ export default function WhatsAppPage() {
               <p className="text-sm text-slate-500 mb-3">Cuando un cliente tiene <strong>varias pólizas</strong>, en vez de un WhatsApp por cada una recibe <strong>un solo mensaje</strong> con el resumen de todos sus vencimientos. Así no lo saturás y cuenta como un envío. {resumenOn ? "Está activo." : "Está desactivado: se manda un mensaje por póliza."}</p>
               <p className="text-xs font-semibold text-slate-400 mb-1.5">Así lo recibe el cliente:</p>
               <div className="rounded-lg p-2.5 text-[13px] text-slate-700 whitespace-pre-wrap" style={{ background: "#e7f7ee", border: "1px solid rgba(14,159,110,.18)" }}>
-{`Hola Juan 👋
+{`Hola Juan Pérez 👋
 Te recordamos el vencimiento de tus pólizas:
 
 • Auto (AB123CD): vence el 25/06/2026
