@@ -63,6 +63,7 @@ export default function WhatsAppPage() {
   const [config, setConfig] = useState<WaPolizasConfig | null>(null)
   const [savingKey, setSavingKey] = useState<WaPolizaKey | null>(null)
   const [savingHorario, setSavingHorario] = useState(false)
+  const [savingDias, setSavingDias] = useState(false)
   const [savingResumen, setSavingResumen] = useState(false)
   const [resumenMsg, setResumenMsg] = useState<{ ok: boolean; msg: string } | null>(null)
   // Textos editables de los dos resúmenes (pólizas / cuotas).
@@ -135,6 +136,21 @@ export default function WhatsAppPage() {
     try { const r = await whatsappAPI.setConfig(token, { [key]: { enabled } } as any); if (r.ok) setConfig(r.config) }
     catch { setConfig({ ...config, [key]: { enabled: !enabled } }) }
     finally { setSavingKey(null) }
+  }
+
+  const guardarDiaSemana = async (dia: number) => {
+    if (!config) return
+    const token = localStorage.getItem("token"); if (!token) return
+    const cur: number[] = Array.isArray((config as any).diasEnvio) ? (config as any).diasEnvio : [0, 1, 2, 3, 4, 5, 6]
+    let next = cur.includes(dia) ? cur.filter((x) => x !== dia) : [...cur, dia]
+    if (next.length === 0) return
+    next = next.sort((x, y) => x - y)
+    const prev = (config as any).diasEnvio
+    setConfig({ ...config, diasEnvio: next } as any)
+    setSavingDias(true)
+    try { const r = await whatsappAPI.setConfig(token, { diasEnvio: next } as any); if (r.ok) setConfig(r.config) }
+    catch { setConfig({ ...config, diasEnvio: prev } as any) }
+    finally { setSavingDias(false) }
   }
 
   const guardarHorario = async (desde: number, hasta: number) => {
@@ -383,6 +399,24 @@ export default function WhatsAppPage() {
                   {Array.from({ length: 24 }, (_, i) => i + 1).map((h) => <option key={h} value={h}>{String(h).padStart(2, "0")}:00</option>)}
                 </select>
                 {savingHorario && <Loader2 className="h-4 w-4 animate-spin text-slate-400" />}
+              </div>
+              <div className="mt-4 pt-4 border-t border-slate-100">
+                <p className="text-sm text-slate-600 mb-2">Dias en que se envian los avisos automaticos:</p>
+                <div className="flex flex-wrap gap-1.5 items-center">
+                  {([["Lun", 1], ["Mar", 2], ["Mie", 3], ["Jue", 4], ["Vie", 5], ["Sab", 6], ["Dom", 0]] as [string, number][]).map(([lbl, dd]) => {
+                    const dias: number[] = Array.isArray((config as any)?.diasEnvio) ? (config as any).diasEnvio : [0, 1, 2, 3, 4, 5, 6]
+                    const on = dias.includes(dd)
+                    return (
+                      <button key={dd} type="button" onClick={() => guardarDiaSemana(dd)} disabled={savingDias}
+                        className="px-3 py-1.5 rounded-lg border text-sm font-medium transition disabled:opacity-50"
+                        style={on ? { background: ACCENT, color: "#fff", borderColor: ACCENT } : { background: "#fff", color: "#64748b" }}>
+                        {lbl}
+                      </button>
+                    )
+                  })}
+                  {savingDias && <Loader2 className="h-4 w-4 animate-spin text-slate-400 ml-1" />}
+                </div>
+                <p className="text-xs text-slate-400 mt-2">Los avisos solo salen en los dias marcados y dentro de la franja horaria de arriba.</p>
               </div>
             </div>
 

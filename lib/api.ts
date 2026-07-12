@@ -2976,6 +2976,7 @@ export interface SegurosStats {
   porRamo: { _id: string; total: number }[]
   emitidasEsteMes: number
   anuladasEsteMes: number
+  objetivoMensual?: number
   debitoAutomatico: number
   debitoCBU: number
   debitoTarjCred: number
@@ -3033,6 +3034,10 @@ export const segurosAPI = {
     const qs = params ? "?" + new URLSearchParams(params).toString() : ""
     return fetchAPI<{ success: boolean; stats: SegurosStats }>(`/api/seguros/dashboard${qs}`, { token })
   },
+  getObjetivo: (token: string) =>
+    fetchAPI<{ success: boolean; objetivoMensual: number }>("/api/aseguradora/objetivo", { token }),
+  setObjetivo: (token: string, objetivoMensual: number) =>
+    fetchAPI<{ success: boolean; objetivoMensual: number }>("/api/aseguradora/objetivo", { method: "PUT", token, body: JSON.stringify({ objetivoMensual }) }),
 
   // Pólizas
   getPolizas: (token: string, params?: Record<string, string>) => {

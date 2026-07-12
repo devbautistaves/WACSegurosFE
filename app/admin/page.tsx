@@ -711,7 +711,7 @@ export default function AdminDashboardPage() {
     const MONTH_NAMES_ES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"]
     const mesDashLabel = `${MONTH_NAMES_ES[segurosMonth]} ${segurosYear}`
 
-    const OBJETIVO = 50
+    const OBJETIVO = st?.objetivoMensual ?? 50
     const emitidas = st?.emitidasEsteMes ?? 0
     const pctObjetivo = Math.min(100, Math.round((emitidas / OBJETIVO) * 100))
     const faltan = Math.max(0, OBJETIVO - emitidas)
