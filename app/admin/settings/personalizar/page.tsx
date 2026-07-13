@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import { DashboardLayout } from "@/components/layout/dashboard-layout"
 import { brandingAPI, BrandingSettings } from "@/lib/api"
+import { ExportarDatos } from "@/components/exportar-datos"
 import { Loader2, Plus, X, Save, Tag, Building2, CreditCard, Upload, Palette, ImageIcon, Search } from "lucide-react"
 
 function Chip({ label, onRemove }: { label: string; onRemove: () => void }) {
@@ -230,6 +231,8 @@ export default function PersonalizarPage() {
             <TagInput items={b.mediosPagoCatalogo || []} onChange={v => setB({ ...b, mediosPagoCatalogo: v })} placeholder="Ej: CBU" />
           </div>
         </div>
+
+        <ExportarDatos />
 
         <div className="sticky bottom-4 flex justify-end">
           <button
