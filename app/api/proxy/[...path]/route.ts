@@ -101,8 +101,9 @@ async function proxyRequest(
       body,
     })
 
-    // Get response data
-    const responseData = await response.text()
+    // Get response data — arrayBuffer preserva binarios (.xlsx/.pdf) intactos;
+    // el JSON/texto se sirve igual segun el Content-Type reenviado.
+    const responseData = await response.arrayBuffer()
 
     // Return response with CORS headers + Set-Cookie forward (refresh flow)
     const resHeaders = new Headers({
@@ -111,6 +112,8 @@ async function proxyRequest(
       "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Company-ID, Cookie",
     })
+    const cdHeader = response.headers.get("Content-Disposition")
+    if (cdHeader) resHeaders.set("Content-Disposition", cdHeader)
     const sc = (response.headers as any).getSetCookie?.() ?? null
     if (Array.isArray(sc)) {
       for (const c of sc) resHeaders.append("set-cookie", c)
