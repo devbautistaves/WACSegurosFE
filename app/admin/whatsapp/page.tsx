@@ -153,6 +153,14 @@ export default function WhatsAppPage() {
     finally { setSavingDias(false) }
   }
 
+  const guardarRepetirVencida = async (val: number) => {
+    if (!token || !config) return
+    const prev = (config as any).cuotaVencidaRepetirDias
+    setConfig({ ...config, cuotaVencidaRepetirDias: val } as any)
+    try { const r = await whatsappAPI.setConfig(token, { cuotaVencidaRepetirDias: val } as any); if (r.ok) setConfig(r.config) }
+    catch { setConfig({ ...config, cuotaVencidaRepetirDias: prev } as any) }
+  }
+
   const guardarHorario = async (desde: number, hasta: number) => {
     if (!token || !config) return
     const prev = (config as any).horarioEnvios
@@ -516,7 +524,19 @@ export default function WhatsAppPage() {
                           <p className="text-sm font-semibold text-slate-700">{a.label}</p>
                           <p className="text-xs text-slate-500 flex items-start gap-1 mt-0.5">
                             <Info className="h-3 w-3 mt-0.5 flex-shrink-0 text-slate-400" />
-                            <span>{a.cuando}{a.configKey === "polizaProxima" && config ? ` Hoy: ${config.diasProximo} días antes.` : ""}</span>
+                            <span>{a.cuando}{a.configKey === "polizaProxima" && config ? ` Hoy: ${config.diasProximo} días antes.` : ""}
+                              {a.configKey === "cuotaVencida" && config ? (
+                                <span className="inline-flex items-center gap-1 ml-1 align-middle">
+                                  Reenviar cada
+                                  <input type="number" min={0} max={60}
+                                    value={(config as any).cuotaVencidaRepetirDias ?? 0}
+                                    onClick={(e) => e.stopPropagation()}
+                                    onChange={(e) => setConfig({ ...(config as any), cuotaVencidaRepetirDias: parseInt(e.target.value) || 0 })}
+                                    onBlur={(e) => guardarRepetirVencida(parseInt(e.target.value) || 0)}
+                                    className="w-11 px-1 py-0.5 rounded border text-center text-xs" style={{ borderColor: "#e2e8f0" }} />
+                                  días (0 = una vez).
+                                </span>
+                              ) : ""}</span>
                           </p>
                         </div>
                         <button onClick={() => !saving && toggleAviso(a.configKey as WaPolizaKey, !on)} disabled={saving} aria-label={a.label}
