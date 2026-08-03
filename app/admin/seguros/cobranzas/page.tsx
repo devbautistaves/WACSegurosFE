@@ -289,8 +289,18 @@ export default function CobranzasPage() {
   }
 
   // ── Helpers ──────────────────────────────────────────────────────────────────
-  const getPagoEstado = (c: CobranzaEfectivo): EstadoPago =>
-    c.pagos.find(p => p.mes === mesKey)?.estado ?? "PENDIENTE"
+  const getPagoEstado = (c: CobranzaEfectivo): EstadoPago => {
+    const base = c.pagos.find(p => p.mes === mesKey)?.estado ?? "PENDIENTE"
+    // Derivar "vencida" por fecha: una cuota pendiente/cupón (o sin registro del
+    // mes) cuya fecha de vencimiento ya pasó se muestra como vencida, aunque el
+    // cron no haya podido flipearla (no existe el registro del mes que actualizar).
+    if (base !== "PENDIENTE" && base !== "CUPON_ENVIADO") return base
+    const now = new Date()
+    const curMes = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`
+    if (mesKey < curMes) return "CUOTA_VENCIDA"
+    if (mesKey === curMes && typeof c.diaVto === "number" && c.diaVto < now.getDate()) return "CUOTA_VENCIDA"
+    return base
+  }
 
   const getPagoData = (c: CobranzaEfectivo): PagoMes | undefined =>
     c.pagos.find(p => p.mes === mesKey)
