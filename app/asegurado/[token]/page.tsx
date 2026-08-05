@@ -608,8 +608,29 @@ function PolizaCard({
           <Campo label="N° de motor" value={v.motor} mono />
           {v.gnc && <Campo label="GNC" value="Sí" />}
           {(v.domicilio || v.localidad) && <Campo label="Domicilio del riesgo" value={[v.domicilio, v.localidad].filter(Boolean).join(" · ")} wide />}
-          {v.datosRiesgo && v.datosRiesgo !== titulo && <Campo label="Datos del riesgo" value={v.datosRiesgo} wide />}
         </div>
+
+        {Array.isArray((v as any).riesgos) && (v as any).riesgos.length > 1 && (
+          <>
+            <div className="leg-sub leg-eye"><Ic n="car" s={14} /> Unidades de la flota ({(v as any).riesgos.length})</div>
+            <div style={{ display: "grid", gap: 8 }}>
+              {(v as any).riesgos.map((r: any, i: number) => (
+                <div key={i} style={{ border: "1px solid var(--line)", borderRadius: 12, padding: "10px 12px", opacity: r.estado === "ANULADA" ? 0.6 : 1 }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+                    <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: "var(--ink)" }}>{r.patente || `Unidad ${i + 1}`}</p>
+                    <span className="leg-stamp" style={r.estado === "ANULADA" ? TONES.neutral : TONES.ok}>{r.estado === "ANULADA" ? "Anulada" : "Vigente"}</span>
+                  </div>
+                  {(r.datosRiesgo || r.tipoCobertura) && <p style={{ margin: "3px 0 0", fontSize: 12.5, color: "var(--muted)" }}>{[r.datosRiesgo, r.tipoCobertura].filter(Boolean).join(" · ")}</p>}
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "2px 14px", marginTop: 6, fontSize: 12, color: "var(--muted)" }}>
+                    {r.chasis && <span>Chasis: <span style={{ fontFamily: "monospace", color: "var(--ink)" }}>{r.chasis}</span></span>}
+                    {r.motor && <span>Motor: <span style={{ fontFamily: "monospace", color: "var(--ink)" }}>{r.motor}</span></span>}
+                    {r.gnc && <span>GNC: Sí</span>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
 
         {/* Cuotas */}
         {grupo.cobranzas.length > 0 && (

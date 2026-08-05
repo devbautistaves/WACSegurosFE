@@ -167,6 +167,8 @@ function PolizasPageInner() {
     return next
   })
   const [formData, setFormData] = useState<Partial<Poliza>>(EMPTY_FORM)
+  const [riesgosExtra, setRiesgosExtra] = useState<any[]>([])
+  const [estadoUnidad1, setEstadoUnidad1] = useState<"VIGENTE" | "ANULADA">("VIGENTE")
   const [isSubmitting, setIsSubmitting] = useState(false)
 
 
@@ -322,8 +324,14 @@ function PolizasPageInner() {
   const hasFilters = estadoFilter !== "all" || aseguradoraFilter !== "all" || ramoFilter !== "all" || search.trim() !== ""
   const clearFilters = () => { setEstadoFilter("all"); setAseguradoraFilter("all"); setRamoFilter("all"); setSearch(""); setPage(1) }
 
-  const openCreate = () => { setSelectedPoliza(null); setFormData(EMPTY_FORM); setIsDialogOpen(true) }
-  const openEdit = (p: Poliza) => { setSelectedPoliza(p); setFormData({ ...p }); setIsDialogOpen(true) }
+  const openCreate = () => { setSelectedPoliza(null); setFormData(EMPTY_FORM); setRiesgosExtra([]); setEstadoUnidad1("VIGENTE"); setIsDialogOpen(true) }
+  const openEdit = (p: Poliza) => {
+    setSelectedPoliza(p); setFormData({ ...p })
+    const rs = (p as any).riesgos as any[] | undefined
+    setRiesgosExtra(Array.isArray(rs) && rs.length > 1 ? rs.slice(1).map((r: any) => ({ patente: r.patente || "", tipoCobertura: r.tipoCobertura || "", chasis: r.chasis || "", motor: r.motor || "", gnc: !!r.gnc, datosRiesgo: r.datosRiesgo || "", estado: r.estado || "VIGENTE" })) : [])
+    setEstadoUnidad1(Array.isArray(rs) && rs[0]?.estado === "ANULADA" ? "ANULADA" : "VIGENTE")
+    setIsDialogOpen(true)
+  }
 
   const handleSubmit = async () => {
     const token = localStorage.getItem("token")
@@ -339,15 +347,20 @@ function PolizasPageInner() {
       toast({ title: "Fechas inválidas", description: "La fecha fin debe ser posterior a la fecha inicio de vigencia.", variant: "destructive" }); return
     }
     setIsSubmitting(true)
+    const _extra = riesgosExtra.filter((r: any) => String(r.patente || r.datosRiesgo || r.chasis || r.motor || "").trim() !== "")
+    const _payload: any = { ...formData }
+    if (_extra.length > 0 || estadoUnidad1 === "ANULADA") {
+      _payload.riesgos = [{ patente: formData.patente || "", tipoCobertura: formData.tipoCobertura || "", chasis: formData.chasis || "", motor: formData.motor || "", gnc: !!formData.gnc, datosRiesgo: formData.datosRiesgo || "", estado: estadoUnidad1 }, ..._extra]
+    }
     try {
       if (selectedPoliza) {
-        const res = await segurosAPI.updatePoliza(token, selectedPoliza._id, formData)
+        const res = await segurosAPI.updatePoliza(token, selectedPoliza._id, _payload)
         toast({
           title: "Póliza actualizada",
           description: res.cobranzaCreada ? "Se generó el registro de cobranza automáticamente." : undefined,
         })
       } else {
-        const res = await segurosAPI.createPoliza(token, formData)
+        const res = await segurosAPI.createPoliza(token, _payload)
         toast({
           title: "Póliza creada",
           description: res.cobranzaCreada ? "Se generó el registro de cobranza automáticamente." : undefined,
@@ -937,6 +950,58 @@ function PolizasPageInner() {
                 <FieldLabel>Descripción / Datos del Riesgo</FieldLabel>
                 <Input value={formData.datosRiesgo || ""} onChange={field("datosRiesgo")} placeholder="Descripción adicional del riesgo" className="bg-secondary/50" />
               </Field>
+
+              <div className="border-t border-border/50 pt-4 mt-2">
+                <div className="flex items-center justify-between mb-1">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase">Riesgos / Unidades de la póliza</p>
+                  <span className="text-xs text-muted-foreground">{riesgosExtra.length + 1} {riesgosExtra.length + 1 === 1 ? "unidad" : "unidades"}</span>
+                </div>
+                <p className="text-xs text-muted-foreground mb-3">La unidad 1 son los datos de arriba. Sumá más unidades para una póliza de flota — el cobro sigue siendo uno solo por la póliza.</p>
+                {riesgosExtra.length > 0 && (
+                  <Field>
+                    <FieldLabel>Estado de la unidad 1</FieldLabel>
+                    <Select value={estadoUnidad1} onValueChange={(v: any) => setEstadoUnidad1(v)}>
+                      <SelectTrigger className="bg-secondary/50"><SelectValue /></SelectTrigger>
+                      <SelectContent><SelectItem value="VIGENTE">Vigente</SelectItem><SelectItem value="ANULADA">Anulada</SelectItem></SelectContent>
+                    </Select>
+                  </Field>
+                )}
+                <div className="space-y-3 mt-3">
+                  {riesgosExtra.map((r: any, i: number) => (
+                    <div key={i} className="rounded-lg border border-border/60 bg-secondary/30 p-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-xs font-semibold">Unidad {i + 2}</p>
+                        <button type="button" onClick={() => setRiesgosExtra(list => list.filter((_, j) => j !== i))} className="text-muted-foreground hover:text-red-600" aria-label="Quitar unidad"><Trash2 className="h-4 w-4" /></button>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <Field><FieldLabel>Patente / Identificador</FieldLabel><Input value={r.patente || ""} onChange={e => setRiesgosExtra(list => list.map((x, j) => j === i ? { ...x, patente: e.target.value } : x))} placeholder="Ej: AB123CD" className="bg-secondary/50" /></Field>
+                        <Field><FieldLabel>Tipo de cobertura</FieldLabel><Input value={r.tipoCobertura || ""} onChange={e => setRiesgosExtra(list => list.map((x, j) => j === i ? { ...x, tipoCobertura: e.target.value } : x))} placeholder="Ej: Todo riesgo" className="bg-secondary/50" /></Field>
+                        <Field><FieldLabel>Chasis</FieldLabel><Input value={r.chasis || ""} onChange={e => setRiesgosExtra(list => list.map((x, j) => j === i ? { ...x, chasis: e.target.value } : x))} className="bg-secondary/50" /></Field>
+                        <Field><FieldLabel>Motor</FieldLabel><Input value={r.motor || ""} onChange={e => setRiesgosExtra(list => list.map((x, j) => j === i ? { ...x, motor: e.target.value } : x))} className="bg-secondary/50" /></Field>
+                        <Field><FieldLabel>GNC</FieldLabel>
+                          <Select value={r.gnc ? "SI" : "NO"} onValueChange={(v: any) => setRiesgosExtra(list => list.map((x, j) => j === i ? { ...x, gnc: v === "SI" } : x))}>
+                            <SelectTrigger className="bg-secondary/50"><SelectValue /></SelectTrigger>
+                            <SelectContent><SelectItem value="NO">No</SelectItem><SelectItem value="SI">Sí</SelectItem></SelectContent>
+                          </Select>
+                        </Field>
+                        <Field><FieldLabel>Estado</FieldLabel>
+                          <Select value={r.estado || "VIGENTE"} onValueChange={(v: any) => setRiesgosExtra(list => list.map((x, j) => j === i ? { ...x, estado: v } : x))}>
+                            <SelectTrigger className="bg-secondary/50"><SelectValue /></SelectTrigger>
+                            <SelectContent><SelectItem value="VIGENTE">Vigente</SelectItem><SelectItem value="ANULADA">Anulada</SelectItem></SelectContent>
+                          </Select>
+                        </Field>
+                      </div>
+                      <div className="mt-3">
+                        <FieldLabel>Descripción / Datos del riesgo</FieldLabel>
+                        <Input value={r.datosRiesgo || ""} onChange={e => setRiesgosExtra(list => list.map((x, j) => j === i ? { ...x, datosRiesgo: e.target.value } : x))} placeholder="Ej: Renault Logan 2019" className="bg-secondary/50" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <button type="button" onClick={() => setRiesgosExtra(list => [...list, { patente: "", tipoCobertura: "", chasis: "", motor: "", gnc: false, datosRiesgo: "", estado: "VIGENTE" }])} className="mt-3 w-full rounded-lg border border-dashed border-border py-2 text-sm text-emerald-600 hover:bg-secondary/40 flex items-center justify-center gap-1">
+                  <Plus className="h-4 w-4" /> Agregar riesgo
+                </button>
+              </div>
             </FieldGroup>
           </div>
           <DialogFooter className="px-6 py-4 border-t border-border/50 shrink-0">
