@@ -2472,7 +2472,7 @@ export interface LegajoSiniestro {
   denunciaAdministrativa?: "REALIZADA" | "PENDIENTE"
 }
 export interface LegajoPublico {
-  productor: { nombre: string; logo?: string; colorPrimario?: string; whatsapp?: string; telefono?: string; email?: string; datosCobro?: DatosCobro | null }
+  productor: { nombre: string; logo?: string; colorPrimario?: string; coverUrl?: string; boton?: { texto: string; url: string } | null; whatsapp?: string; telefono?: string; email?: string; datosCobro?: DatosCobro | null }
   cliente: { nombreApellido: string; dni?: string; email?: string; telefono?: string }
   vehiculos: LegajoVehiculo[]
   cuentaCorriente: LegajoCobranza[]
@@ -3181,6 +3181,8 @@ export interface BrandingSettings {
   aseguradorasCatalogo?: string[]
   ramosCatalogo?: string[]
   mediosPagoCatalogo?: string[]
+  coverUrl?: string
+  botonPersonalizado?: { activo?: boolean; texto?: string; url?: string }
 }
 
 export const brandingAPI = {
@@ -3194,6 +3196,10 @@ export const brandingAPI = {
     }),
   uploadLogo: (token: string, base64: string, mime: string) =>
     fetchAPI<{ success: boolean; logo: string }>("/api/branding/logo", {
+      method: "POST", token, body: JSON.stringify({ base64, mime }),
+    }),
+  uploadCover: (token: string, base64: string, mime: string) =>
+    fetchAPI<{ success: boolean; coverUrl: string }>("/api/branding/cover", {
       method: "POST", token, body: JSON.stringify({ base64, mime }),
     }),
 }

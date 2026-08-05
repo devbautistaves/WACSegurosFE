@@ -326,7 +326,7 @@ export default function AseguradoLegajoPage() {
       {estado === "ok" && data && (
         <>
           {/* ── Tapa ── */}
-          <div className="leg-cover">
+          <div className="leg-cover" style={data.productor.coverUrl ? { backgroundImage: `linear-gradient(165deg, rgba(15,32,26,.55), rgba(15,32,26,.78)), url(${data.productor.coverUrl})`, backgroundSize: "cover", backgroundPosition: "center" } : undefined}>
             <div className="leg-wrap">
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                 {data.productor.logo
@@ -345,6 +345,13 @@ export default function AseguradoLegajoPage() {
               <p style={{ margin: "10px 0 0", fontSize: 14.5, color: "rgba(255,255,255,.85)", lineHeight: 1.5, maxWidth: 560 }}>
                 Acá tenés tus pólizas a mano: los datos de cada cobertura, el estado de tus cuotas y el seguimiento de tus siniestros.
               </p>
+              {data.productor.boton && (
+                /* eslint-disable-next-line @next/next/no-html-link-for-pages */
+                <a href={/^https?:\/\//.test(data.productor.boton.url) ? data.productor.boton.url : `https://${data.productor.boton.url}`} target="_blank" rel="noopener noreferrer"
+                   style={{ display: "inline-flex", alignItems: "center", gap: 8, marginTop: 20, padding: "11px 20px", borderRadius: 999, background: "#fff", color: accent, fontWeight: 700, fontSize: 14, textDecoration: "none", boxShadow: "0 6px 20px rgba(0,0,0,.18)" }}>
+                  {data.productor.boton.texto} →
+                </a>
+              )}
               {resumen.total > 0 && (
                 <div style={{ display: "flex", gap: 22, marginTop: 22, flexWrap: "wrap" }}>
                   <Stat n={resumen.total} label={resumen.total === 1 ? "Póliza" : "Pólizas"} />

@@ -31,13 +31,13 @@ function TagInput({ items, onChange, placeholder }: { items: string[]; onChange:
     <>
       <div className="flex gap-2">
         <input
-          className="flex-1 h-9 rounded-md border px-3 text-sm"
+          className="flex-1 min-w-0 h-9 rounded-md border px-3 text-sm"
           placeholder={placeholder}
           value={val}
           onChange={e => setVal(e.target.value)}
           onKeyDown={e => e.key === "Enter" && (e.preventDefault(), add())}
         />
-        <button onClick={add} type="button" className="h-9 px-3 rounded-md bg-blue-600 text-white text-sm font-medium flex items-center gap-1">
+        <button onClick={add} type="button" className="h-9 shrink-0 px-3 rounded-md bg-blue-600 text-white text-sm font-medium flex items-center gap-1">
           <Plus className="h-4 w-4" /> Agregar
         </button>
       </div>
@@ -61,6 +61,7 @@ export default function PersonalizarPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [uploadingLogo, setUploadingLogo] = useState(false)
+  const [uploadingCover, setUploadingCover] = useState(false)
   const [ok, setOk] = useState<string | null>(null)
   const [err, setErr] = useState<string | null>(null)
 
@@ -71,6 +72,7 @@ export default function PersonalizarPage() {
   })
 
   const fileRef = useRef<HTMLInputElement>(null)
+  const coverRef = useRef<HTMLInputElement>(null)
   const token = typeof window !== "undefined" ? localStorage.getItem("token") : null
 
   useEffect(() => {
@@ -128,6 +130,24 @@ export default function PersonalizarPage() {
       syncLocalStorage(next)
       setOk("Logo subido — recargá si no lo ves en el sidebar")
     } catch (e: any) { setErr(e.message) } finally { setUploadingLogo(false) }
+  }
+
+  const handleCoverFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || !token) return
+    if (file.size > 4 * 1024 * 1024) { setErr("La portada no puede superar los 4MB"); return }
+    setUploadingCover(true); setErr(null); setOk(null)
+    try {
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload = () => resolve((reader.result as string).split(",")[1])
+        reader.onerror = reject
+        reader.readAsDataURL(file)
+      })
+      const r = await brandingAPI.uploadCover(token, base64, file.type)
+      setB(prev => ({ ...prev, coverUrl: r.coverUrl }))
+      setOk("Portada subida ✓")
+    } catch (e: any) { setErr(e.message) } finally { setUploadingCover(false) }
   }
 
   if (loading) return (
@@ -207,6 +227,57 @@ export default function PersonalizarPage() {
               </button>
               <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" className="hidden" onChange={handleLogoFile} />
             </div>
+          </div>
+        </div>
+
+        {/* Página pública del asegurado */}
+        <div className="rounded-xl border bg-white p-5 space-y-5">
+          <div>
+            <h2 className="font-semibold flex items-center gap-2">
+              <ImageIcon className="h-4 w-4 text-blue-600" /> Personalizá la página de tus clientes
+            </h2>
+            <p className="text-xs text-muted-foreground mt-0.5">Es la página que ve tu cliente al abrir su legajo: podés ponerle una imagen de portada y un botón a donde vos quieras.</p>
+          </div>
+          <div>
+            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Imagen de portada</label>
+            <p className="text-xs text-muted-foreground mb-2">Se muestra de fondo en el encabezado. PNG/JPG/WebP · Máx 4MB. Ideal apaisada (ej: 1600×600).</p>
+            <div className="flex items-center gap-4 flex-wrap">
+              {b.coverUrl
+                ? <img src={b.coverUrl} alt="Portada" className="h-20 w-40 object-cover rounded-lg border bg-gray-50" />
+                : <div className="h-20 w-40 rounded-lg border bg-gray-50 flex items-center justify-center text-muted-foreground text-[11px] text-center px-2">Sin portada<br/>(se usa el color)</div>}
+              <div className="flex flex-col gap-2">
+                <button onClick={() => coverRef.current?.click()} disabled={uploadingCover} type="button"
+                        className="h-9 px-4 rounded-md bg-blue-600 text-white text-sm font-medium flex items-center gap-2 disabled:opacity-50">
+                  {uploadingCover ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                  {b.coverUrl ? "Cambiar portada" : "Subir portada"}
+                </button>
+                {b.coverUrl && <button onClick={() => setB(prev => ({ ...prev, coverUrl: "" }))} type="button" className="text-xs text-red-600 hover:underline text-left">Quitar portada</button>}
+                <input ref={coverRef} type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={handleCoverFile} />
+              </div>
+            </div>
+          </div>
+          <div className="border-t pt-4">
+            <label className="flex items-center gap-2 text-sm font-medium">
+              <input type="checkbox" checked={!!b.botonPersonalizado?.activo}
+                     onChange={e => setB(prev => ({ ...prev, botonPersonalizado: { ...(prev.botonPersonalizado || {}), activo: e.target.checked } }))} />
+              Mostrar un botón personalizado
+            </label>
+            <p className="text-xs text-muted-foreground mt-1 mb-3">Ej: “Cotizá otros seguros” que lleve a tu web o a tu WhatsApp.</p>
+            <div className="grid sm:grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Texto del botón</label>
+                <input className="mt-1 w-full h-9 rounded-md border px-3 text-sm" placeholder="Cotizá otros seguros"
+                       value={b.botonPersonalizado?.texto || ""}
+                       onChange={e => setB(prev => ({ ...prev, botonPersonalizado: { ...(prev.botonPersonalizado || {}), texto: e.target.value } }))} />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Link (URL)</label>
+                <input className="mt-1 w-full h-9 rounded-md border px-3 text-sm" placeholder="https://…"
+                       value={b.botonPersonalizado?.url || ""}
+                       onChange={e => setB(prev => ({ ...prev, botonPersonalizado: { ...(prev.botonPersonalizado || {}), url: e.target.value } }))} />
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">Acordate de tocar <strong>Guardar cambios</strong> abajo para aplicar el botón.</p>
           </div>
         </div>
 
