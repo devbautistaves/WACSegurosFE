@@ -18,6 +18,7 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select"
+import { SearchableSelect } from "@/components/ui/searchable-select"
 import { FieldGroup, Field, FieldLabel } from "@/components/ui/field"
 import { MonthNavigator } from "@/components/ui/month-navigator"
 import { segurosAPI, Poliza } from "@/lib/api"
@@ -705,17 +706,23 @@ function PolizasPageInner() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Field>
                   <FieldLabel>Aseguradora</FieldLabel>
-                  <Select value={formData.aseguradora || ""} onValueChange={v => setFormData(p => ({ ...p, aseguradora: v as any }))}>
-                    <SelectTrigger className="bg-secondary/50"><SelectValue placeholder="Seleccionar..." /></SelectTrigger>
-                    <SelectContent>{ASEGURADORAS.map(a => <SelectItem key={a} value={a}>{ASEGURADORA_LABELS[a] || a}</SelectItem>)}</SelectContent>
-                  </Select>
+                  <SearchableSelect
+                    value={formData.aseguradora || ""}
+                    onValueChange={v => setFormData(p => ({ ...p, aseguradora: v as any }))}
+                    options={ASEGURADORAS.map(a => ({ value: a, label: ASEGURADORA_LABELS[a] || a }))}
+                    placeholder="Seleccionar..."
+                    triggerClassName="bg-secondary/50"
+                  />
                 </Field>
                 <Field>
                   <FieldLabel>Ramo</FieldLabel>
-                  <Select value={formData.ramo || ""} onValueChange={v => setFormData(p => ({ ...p, ramo: v as any }))}>
-                    <SelectTrigger className="bg-secondary/50"><SelectValue placeholder="Seleccionar..." /></SelectTrigger>
-                    <SelectContent>{RAMOS.map(r => <SelectItem key={r} value={r}>{RAMO_LABELS[r] || r}</SelectItem>)}</SelectContent>
-                  </Select>
+                  <SearchableSelect
+                    value={formData.ramo || ""}
+                    onValueChange={v => setFormData(p => ({ ...p, ramo: v as any }))}
+                    options={RAMOS.map(r => ({ value: r, label: RAMO_LABELS[r] || r }))}
+                    placeholder="Seleccionar..."
+                    triggerClassName="bg-secondary/50"
+                  />
                 </Field>
               </div>
 
