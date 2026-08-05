@@ -577,92 +577,74 @@ function PolizasPageInner() {
                 {hasFilters && <Button variant="link" onClick={clearFilters}>Limpiar filtros</Button>}
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-border text-muted-foreground">
-                      <th className="py-3 px-3 w-10">
-                        <input type="checkbox" aria-label="Seleccionar todas" checked={todasSeleccionadas} onChange={toggleTodas} className="h-4 w-4 accent-emerald-600 cursor-pointer align-middle" />
-                      </th>
-                      <th className="text-left py-3 px-3 font-medium">Asegurado</th>
-                      <th className="text-left py-3 px-3 font-medium">Patente / Riesgo</th>
-                      <th className="text-left py-3 px-3 font-medium">Aseguradora</th>
-                      <th className="text-left py-3 px-3 font-medium">Ramo</th>
-                      <th className="text-left py-3 px-3 font-medium hidden md:table-cell">Cobertura</th>
-                      <th className="text-left py-3 px-3 font-medium hidden lg:table-cell">N° Póliza</th>
-                      <th className="text-left py-3 px-3 font-medium hidden xl:table-cell">Medio Pago</th>
-                      <th className="text-left py-3 px-3 font-medium">Estado</th>
-                      <th className="text-left py-3 px-3 font-medium">Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody>
+              <div className="divide-y divide-border/60">
+                <div className="hidden md:flex items-center gap-3 px-3 py-2 text-xs font-medium text-muted-foreground">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <input type="checkbox" aria-label="Seleccionar todas" checked={todasSeleccionadas} onChange={toggleTodas} className="h-4 w-4 accent-emerald-600 cursor-pointer shrink-0" />
+                    <span>Asegurado / póliza</span>
+                  </div>
+                  <span className="w-28 shrink-0">Estado</span>
+                  <span className="w-[124px] shrink-0 text-right">Acciones</span>
+                </div>
                     {renderItems.map(item => {
                       const fila = (p: Poliza) => (
-                      <tr key={p._id} className={cn("border-b border-border/50 hover:bg-secondary/30 transition-colors", seleccion.has(p._id) && "bg-emerald-500/5", item.grouped && "bg-secondary/10")}>
-                        <td className="py-3 px-3">
-                          <input type="checkbox" aria-label={`Seleccionar ${p.nombreApellido}`} checked={seleccion.has(p._id)} onChange={() => toggleSeleccion(p._id)} className="h-4 w-4 accent-emerald-600 cursor-pointer align-middle" />
-                        </td>
-                        <td className="py-3 px-3">
-                          <p className="font-medium">{p.nombreApellido}</p>
-                          {p.dni && <p className="text-xs text-muted-foreground">DNI: {p.dni}</p>}
-                          {p.celular && <p className="text-xs text-muted-foreground">{p.celular}</p>}
-                        </td>
-                        <td className="py-3 px-3">
-                          <p className="font-mono font-medium">{p.patente || "—"}</p>
-                          {p.localidad && <p className="text-xs text-muted-foreground">{p.localidad}</p>}
-                        </td>
-                        <td className="py-3 px-3 font-medium">{p.aseguradora ? (ASEGURADORA_LABELS[p.aseguradora] || p.aseguradora) : "—"}</td>
-                        <td className="py-3 px-3">{ramoBadge(p.ramo)}</td>
-                        <td className="py-3 px-3 hidden md:table-cell">
-                          <p className="text-xs max-w-[180px] truncate" title={p.tipoCobertura}>{p.tipoCobertura || "—"}</p>
-                        </td>
-                        <td className="py-3 px-3 hidden lg:table-cell font-mono text-xs">{p.numPoliza || "—"}</td>
-                        <td className="py-3 px-3 hidden xl:table-cell text-xs">{p.medioDePago ? (MEDIO_LABELS[p.medioDePago] || p.medioDePago) : "—"}</td>
-                        <td className="py-3 px-3">{estadoBadge(p.estado)}</td>
-                        <td className="py-3 px-3">
-                          <div className="flex gap-1">
-                            <Button
-                              variant="ghost" size="icon"
-                              title="Legajo del cliente (link + QR)"
-                              className="text-violet-600 hover:text-violet-700 hover:bg-violet-500/10"
-                              onClick={(e) => { e.stopPropagation(); setLegajoDialog({ open: true, poliza: p }) }}
-                            >
-                              <IdCard className="h-4 w-4" />
-                            </Button>
-                            {p.estado !== "ANULADA" && (
-                              <Button variant="ghost" size="icon" onClick={() => openRenovar(p)} title="Renovar póliza">
-                                <RefreshCw className="h-4 w-4 text-orange-500" />
-                              </Button>
+                      <div key={p._id} className={cn("flex flex-col md:flex-row md:items-center gap-2 md:gap-3 px-3 py-3 hover:bg-secondary/30 transition-colors", seleccion.has(p._id) && "bg-emerald-500/5", item.grouped && "bg-secondary/10")}>
+                        <div className="flex items-start gap-3 flex-1 min-w-0">
+                          <input type="checkbox" aria-label={`Seleccionar ${p.nombreApellido}`} checked={seleccion.has(p._id)} onChange={() => toggleSeleccion(p._id)} className="mt-1 h-4 w-4 accent-emerald-600 cursor-pointer shrink-0" />
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              <p className="font-medium truncate">{p.nombreApellido}</p>
+                              <span className="md:hidden ml-auto shrink-0">{estadoBadge(p.estado)}</span>
+                            </div>
+                            {(p.dni || p.celular || p.localidad) && (
+                              <p className="text-xs text-muted-foreground truncate">{[p.dni && `DNI ${p.dni}`, p.celular, p.localidad].filter(Boolean).join(" · ")}</p>
                             )}
-                            <Button variant="ghost" size="icon" onClick={() => openEdit(p)}>
-                              <Edit2 className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive"
-                              onClick={() => { setSelectedPoliza(p); setIsDeleteOpen(true) }}>
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                            <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 mt-1.5">
+                              {p.patente && <span className="font-mono text-xs font-medium px-1.5 py-0.5 rounded bg-secondary/70">{p.patente}</span>}
+                              <span className="text-xs text-muted-foreground">{p.aseguradora ? (ASEGURADORA_LABELS[p.aseguradora] || p.aseguradora) : "—"}</span>
+                              {ramoBadge(p.ramo)}
+                              {p.tipoCobertura && <span className="text-xs text-muted-foreground truncate max-w-[150px]" title={p.tipoCobertura}>{p.tipoCobertura}</span>}
+                              {p.numPoliza && <span className="text-xs font-mono text-muted-foreground">N° {p.numPoliza}</span>}
+                              {p.medioDePago && <span className="text-xs text-muted-foreground hidden lg:inline">{MEDIO_LABELS[p.medioDePago] || p.medioDePago}</span>}
+                            </div>
                           </div>
-                        </td>
-                      </tr>
+                        </div>
+                        <div className="hidden md:block w-28 shrink-0">{estadoBadge(p.estado)}</div>
+                        <div className="flex gap-1 shrink-0 md:w-[124px] md:justify-end pl-7 md:pl-0">
+                          <Button variant="ghost" size="icon" title="Legajo del cliente (link + QR)"
+                            className="text-violet-600 hover:text-violet-700 hover:bg-violet-500/10"
+                            onClick={(e) => { e.stopPropagation(); setLegajoDialog({ open: true, poliza: p }) }}>
+                            <IdCard className="h-4 w-4" />
+                          </Button>
+                          {p.estado !== "ANULADA" && (
+                            <Button variant="ghost" size="icon" onClick={() => openRenovar(p)} title="Renovar póliza">
+                              <RefreshCw className="h-4 w-4 text-orange-500" />
+                            </Button>
+                          )}
+                          <Button variant="ghost" size="icon" onClick={() => openEdit(p)} title="Editar">
+                            <Edit2 className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" title="Eliminar"
+                            onClick={() => { setSelectedPoliza(p); setIsDeleteOpen(true) }}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
                       )
                       if (!item.grouped) return <Fragment key={item.key}>{item.ps.map(fila)}</Fragment>
                       const abierto = !gruposColapsados.has(item.key)
                       return (
                         <Fragment key={item.key}>
-                          <tr className="border-b border-border bg-secondary/40 hover:bg-secondary/60 cursor-pointer" onClick={() => toggleGrupo(item.key)}>
-                            <td className="py-2.5 px-3 text-center">{abierto ? <ChevronDown className="h-4 w-4 inline text-muted-foreground" /> : <ChevronRight className="h-4 w-4 inline text-muted-foreground" />}</td>
-                            <td className="py-2.5 px-3" colSpan={9}>
-                              <span className="font-semibold">{item.ps[0].nombreApellido}</span>
-                              <span className="text-xs text-muted-foreground ml-2">DNI {item.dni}</span>
-                              <span className="ml-2 inline-flex items-center rounded-full bg-emerald-500/15 text-emerald-700 text-xs px-2 py-0.5 font-medium">{item.ps.length} pólizas</span>
-                            </td>
-                          </tr>
+                          <div className="flex items-center gap-2 px-3 py-2.5 bg-secondary/40 hover:bg-secondary/60 cursor-pointer" onClick={() => toggleGrupo(item.key)}>
+                            {abierto ? <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" /> : <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />}
+                            <span className="font-semibold truncate">{item.ps[0].nombreApellido}</span>
+                            <span className="text-xs text-muted-foreground shrink-0">DNI {item.dni}</span>
+                            <span className="ml-auto shrink-0 inline-flex items-center rounded-full bg-emerald-500/15 text-emerald-700 text-xs px-2 py-0.5 font-medium">{item.ps.length} pólizas</span>
+                          </div>
                           {abierto && item.ps.map(fila)}
                         </Fragment>
                       )
                     })}
-                  </tbody>
-                </table>
               </div>
             )}
           </CardContent>
